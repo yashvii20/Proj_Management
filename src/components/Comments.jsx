@@ -1,0 +1,226 @@
+import React, { useEffect, useState, useRef } from 'react'
+import { supabase } from '../supabase'
+
+function Comments({ taskId, moodboardItemId, attachmentId }) {
+  const [comments, setComments] = useState([])
+  const [newComment, setNewComment] = useState('')
+  const [currentUser, setCurrentUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [profiles, setProfiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showMentions, setShowMentions] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionedUsers, setMentionedUsers] = useState([])
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUser(user)
+      if (user) {
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(data)
+      }
+      const { data: allProfiles } = await supabase.from('profiles').select('*')
+      setProfiles(allProfiles || [])
+      fetchComments()
+    }
+    init()
+  }, [taskId, moodboardItemId, attachmentId])
+
+  const fetchComments = async () => {
+    let query = supabase.from('comments').select('*, profiles(full_name, id)').order('created_at', { ascending: true })
+    if (attachmentId) query = query.eq('attachment_id', attachmentId)
+    else if (taskId) query = query.eq('task_id', taskId)
+    else if (moodboardItemId) query = query.eq('moodboard_item_id', moodboardItemId)
+    const { data } = await query
+    setComments(data || [])
+    setLoading(false)
+  }
+
+  const handleInput = (e) => {
+    const val = e.target.value
+    setNewComment(val)
+    const atIndex = val.lastIndexOf('@')
+    if (atIndex !== -1 && atIndex === val.length - 1) {
+      setShowMentions(true)
+      setMentionQuery('')
+    } else if (atIndex !== -1 && val.slice(atIndex + 1).match(/^\w+$/)) {
+      setShowMentions(true)
+      setMentionQuery(val.slice(atIndex + 1).toLowerCase())
+    } else {
+      setShowMentions(false)
+      setMentionQuery('')
+    }
+  }
+
+  const handleMentionSelect = (p) => {
+    const atIndex = newComment.lastIndexOf('@')
+    const before = newComment.slice(0, atIndex)
+    setNewComment(before + '@' + p.full_name + ' ')
+    setMentionedUsers(prev => [...prev.filter(u => u.id !== p.id), p])
+    setShowMentions(false)
+    inputRef.current && inputRef.current.focus()
+  }
+
+  const filteredProfiles = profiles.filter(p => {
+    if (!mentionQuery) return p.id !== currentUser?.id
+    return p.full_name.toLowerCase().includes(mentionQuery) && p.id !== currentUser?.id
+  })
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!newComment.trim()) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: newC } = await supabase.from('comments').insert({
+      content: newComment.trim(),
+      created_by: user.id,
+      task_id: taskId || null,
+      moodboard_item_id: moodboardItemId || null,
+      attachment_id: attachmentId || null,
+    }).select().single()
+    if (newC && mentionedUsers.length > 0) {
+      for (const mentioned of mentionedUsers) {
+        if (mentioned.id !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: mentioned.id,
+            type: 'mention',
+            message: (profile?.full_name || 'Someone') + ' mentioned you in a comment',
+            comment_id: newC.id,
+            attachment_id: attachmentId || null,
+            moodboard_item_id: moodboardItemId || null,
+          })
+        }
+      }
+    }
+    if (attachmentId && newC) {
+      const { data: attach } = await supabase.from('moodboard_attachments').select('added_by, profiles(full_name)').eq('id', attachmentId).single()
+      if (attach && attach.added_by && attach.added_by !== user.id && !mentionedUsers.find(u => u.id === attach.added_by)) {
+        await supabase.from('notifications').insert({
+          user_id: attach.added_by,
+          type: 'comment',
+          message: (profile?.full_name || 'Someone') + ' commented on your reference',
+          comment_id: newC.id,
+          attachment_id: attachmentId,
+          moodboard_item_id: moodboardItemId || null,
+        })
+      }
+    }
+    setNewComment('')
+    setMentionedUsers([])
+    setSaving(false)
+    fetchComments()
+  }
+
+  const handleDelete = async (commentId) => {
+    await supabase.from('comments').delete().eq('id', commentId)
+    fetchComments()
+  }
+
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
+
+  const formatTime = (ts) => {
+    const d = new Date(ts)
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+  }
+
+  const renderContent = (content) => {
+    const sortedProfiles = [...profiles].sort((a, b) => b.full_name.length - a.full_name.length)
+    const mentionPattern = sortedProfiles.map(p => '@' + p.full_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+    if (!mentionPattern) return [content]
+    const regex = new RegExp('(' + mentionPattern + ')', 'g')
+    const parts = content.split(regex)
+    return parts.map((part, i) => {
+      const isMention = sortedProfiles.some(p => '@' + p.full_name === part)
+      if (isMention) {
+        return React.createElement('span', { key: i, style: { color: '#a78bfa', fontWeight: '600' } }, part)
+      }
+      return React.createElement('span', { key: i }, part)
+    })
+  }
+
+  return (
+    React.createElement('div', { style: s.wrap },
+      React.createElement('div', { style: s.header },
+        React.createElement('span', { style: s.headerTitle }, 'Comments'),
+        React.createElement('span', { style: s.headerCount }, comments.length)
+      ),
+      loading && React.createElement('div', { style: s.loading }, 'Loading...'),
+      !loading && comments.length === 0 && React.createElement('div', { style: s.empty }, 'No comments yet.'),
+      React.createElement('div', { style: s.list },
+        comments.map(comment =>
+          React.createElement('div', { key: comment.id, style: s.commentRow },
+            React.createElement('div', { style: s.avatar }, getInitials(comment.profiles?.full_name)),
+            React.createElement('div', { style: s.bubble },
+              React.createElement('div', { style: s.bubbleHeader },
+                React.createElement('span', { style: s.authorName }, comment.profiles?.full_name || 'Unknown'),
+                React.createElement('span', { style: s.timestamp }, formatTime(comment.created_at)),
+                currentUser?.id === comment.created_by && React.createElement('span', { style: s.deleteBtn, onClick: () => handleDelete(comment.id) }, 'Delete')
+              ),
+              React.createElement('div', { style: s.content }, renderContent(comment.content))
+            )
+          )
+        )
+      ),
+      React.createElement('div', { style: s.formWrap },
+        showMentions && filteredProfiles.length > 0 && React.createElement('div', { style: s.mentionPopup },
+          filteredProfiles.slice(0, 5).map(p =>
+            React.createElement('div', { key: p.id, style: s.mentionRow, onClick: () => handleMentionSelect(p) },
+              React.createElement('div', { style: s.mentionAvatar }, getInitials(p.full_name)),
+              React.createElement('span', { style: s.mentionName }, p.full_name)
+            )
+          )
+        ),
+        React.createElement('form', { onSubmit: handleSubmit, style: s.form },
+          React.createElement('div', { style: s.inputRow },
+            React.createElement('div', { style: s.myAvatar }, getInitials(profile?.full_name)),
+            React.createElement('input', {
+              ref: inputRef,
+              style: s.input,
+              placeholder: 'Add a comment... type @ to mention',
+              value: newComment,
+              onChange: handleInput
+            }),
+            React.createElement('button', {
+              type: 'submit',
+              style: { ...s.submitBtn, opacity: (!newComment.trim() || saving) ? 0.5 : 1 },
+              disabled: saving || !newComment.trim()
+            }, saving ? '...' : 'Post')
+          )
+        )
+      )
+    )
+  )
+}
+
+const s = {
+  wrap: { borderTop: '1px solid #1e1e1e', paddingTop: '14px', marginTop: '8px' },
+  header: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' },
+  headerTitle: { fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  headerCount: { background: '#1e1e1e', color: '#555', fontSize: '11px', padding: '1px 7px', borderRadius: '10px' },
+  loading: { fontSize: '12px', color: '#555', padding: '6px 0' },
+  empty: { fontSize: '12px', color: '#444', padding: '8px 0', fontStyle: 'italic' },
+  list: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px', maxHeight: '200px', overflowY: 'auto' },
+  commentRow: { display: 'flex', gap: '8px', alignItems: 'flex-start' },
+  avatar: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' },
+  bubble: { flex: 1, background: '#1a1a1a', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px' },
+  bubbleHeader: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' },
+  authorName: { fontSize: '11px', fontWeight: '600', color: '#ccc' },
+  timestamp: { fontSize: '10px', color: '#444', flex: 1 },
+  deleteBtn: { fontSize: '10px', color: '#555', cursor: 'pointer' },
+  content: { fontSize: '12px', color: '#999', lineHeight: '1.5' },
+  formWrap: { position: 'relative' },
+  mentionPopup: { position: 'absolute', bottom: '100%', left: '32px', right: 0, background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px', marginBottom: '4px', zIndex: 10 },
+  mentionRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '6px', cursor: 'pointer' },
+  mentionAvatar: { width: '20px', height: '20px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  mentionName: { fontSize: '12px', color: '#ccc' },
+  form: { marginTop: '4px' },
+  inputRow: { display: 'flex', alignItems: 'center', gap: '6px' },
+  myAvatar: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  input: { flex: 1, padding: '8px 10px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#fff', fontSize: '12px', outline: 'none' },
+  submitBtn: { background: '#a78bfa', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' },
+}
+
+export default Comments

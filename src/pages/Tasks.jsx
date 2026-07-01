@@ -1,0 +1,162 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabase'
+import Sidebar from '../components/Sidebar'
+
+function Tasks() {
+  const navigate = useNavigate()
+  const [tasks, setTasks] = useState([])
+  const [projects, setProjects] = useState([])
+  const [profiles, setProfiles] = useState([])
+  const [currentUser, setCurrentUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [filterProject, setFilterProject] = useState('all')
+  const [filterAssignee, setFilterAssignee] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [scope, setScope] = useState('all')
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUser(user)
+      fetchTasks()
+      fetchProjects()
+      fetchProfiles()
+    }
+    init()
+  }, [])
+
+  const fetchTasks = async () => {
+    const { data } = await supabase.from('tasks').select('*, projects(name)').order('created_at', { ascending: false })
+    setTasks(data || [])
+    setLoading(false)
+  }
+
+  const fetchProjects = async () => {
+    const { data } = await supabase.from('projects').select('*')
+    setProjects(data || [])
+  }
+
+  const fetchProfiles = async () => {
+    const { data } = await supabase.from('profiles').select('*')
+    setProfiles(data || [])
+  }
+
+  const updateStatus = async (taskId, status) => {
+    await supabase.from('tasks').update({ status }).eq('id', taskId)
+    fetchTasks()
+  }
+
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
+  const getProfileName = (userId) => profiles.find(p => p.id === userId)?.full_name || 'Unassigned'
+
+  const statusLabel = { todo: 'To do', inprogress: 'In progress', done: 'Done' }
+  const statusColor = { todo: '#444', inprogress: '#a78bfa', done: '#4ade80' }
+
+  const filtered = tasks.filter(t => {
+    if (scope === 'mine' && t.assigned_to !== currentUser?.id) return false
+    if (filterProject !== 'all' && t.project_id !== filterProject) return false
+    if (filterAssignee !== 'all' && t.assigned_to !== filterAssignee) return false
+    if (filterStatus !== 'all' && t.status !== filterStatus) return false
+    return true
+  })
+
+  return (
+    <div style={s.app} className='app-shell'>
+      <Sidebar />
+      <div style={s.main}>
+        <div style={s.topbar}>
+          <div>
+            <div style={s.pageTitle}>All Tasks</div>
+            <div style={s.pageSub}>{filtered.length} tasks across all projects</div>
+          </div>
+        </div>
+
+        <div style={s.filterBar}>
+          <div style={s.filterGroup}>
+            <div style={{ ...s.scopeBtn, ...(scope === 'all' ? s.scopeActive : {}) }} onClick={() => setScope('all')}>All tasks</div>
+            <div style={{ ...s.scopeBtn, ...(scope === 'mine' ? s.scopeActive : {}) }} onClick={() => setScope('mine')}>My tasks</div>
+          </div>
+        </div>
+
+        <div style={s.filterBar}>
+          <select style={s.filterSelect} value={filterProject} onChange={e => setFilterProject(e.target.value)}>
+            <option value='all'>All projects</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <select style={s.filterSelect} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
+            <option value='all'>All members</option>
+            {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+          </select>
+          <select style={s.filterSelect} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value='all'>All statuses</option>
+            <option value='todo'>To do</option>
+            <option value='inprogress'>In progress</option>
+            <option value='done'>Done</option>
+          </select>
+        </div>
+
+        <div style={s.content}>
+          {loading && <div style={s.empty}>Loading...</div>}
+          {!loading && filtered.length === 0 && (
+            <div style={s.emptyState}>
+              <div style={s.emptyTitle}>No tasks found</div>
+              <div style={s.emptySub}>Try adjusting your filters, or add tasks inside a project</div>
+            </div>
+          )}
+          <div style={s.list}>
+            {filtered.map(task => (
+              <div key={task.id} style={s.row} onClick={() => navigate('/projects/' + task.project_id)}>
+                <div
+                  style={{ ...s.check, ...(task.status === 'done' ? s.checkDone : {}) }}
+                  onClick={e => { e.stopPropagation(); updateStatus(task.id, task.status === 'done' ? 'todo' : 'done') }}
+                />
+                <div style={s.rowMain}>
+                  <div style={{ ...s.rowTitle, ...(task.status === 'done' ? s.strikethrough : {}) }}>{task.title}</div>
+                  <div style={s.rowMeta}>
+                    <span style={s.projectTag}>{task.projects?.name || 'Unknown'}</span>
+                    {task.due_date && <span style={s.dueTag}>{new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>}
+                  </div>
+                </div>
+                {task.assigned_to && <div style={s.assignee} title={getProfileName(task.assigned_to)}>{getInitials(getProfileName(task.assigned_to))}</div>}
+                <div style={{ ...s.statusBadge, color: statusColor[task.status], borderColor: statusColor[task.status] + '44' }}>{statusLabel[task.status]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const s = {
+  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #1a1a1a' },
+  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
+  pageSub: { fontSize: '13px', color: '#555' },
+  filterBar: { display: 'flex', gap: '8px', padding: '10px 28px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap', alignItems: 'center' },
+  filterGroup: { display: 'flex', gap: '8px' },
+  scopeBtn: { padding: '5px 14px', borderRadius: '20px', fontSize: '12px', color: '#555', cursor: 'pointer', border: '1px solid transparent' },
+  scopeActive: { border: '1px solid #2a2a2a', color: '#fff', background: '#1e1e1e' },
+  filterSelect: { padding: '6px 12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#aaa', fontSize: '12px', cursor: 'pointer' },
+  content: { flex: 1, overflowY: 'auto', padding: '20px 28px' },
+  empty: { color: '#555', fontSize: '14px' },
+  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '8px' },
+  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
+  emptySub: { fontSize: '13px', color: '#555' },
+  list: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  row: { display: 'flex', alignItems: 'center', gap: '12px', background: '#161616', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '12px 16px', cursor: 'pointer' },
+  check: { width: '18px', height: '18px', borderRadius: '5px', border: '1.5px solid #333', flexShrink: 0, cursor: 'pointer' },
+  checkDone: { background: '#a78bfa', borderColor: '#a78bfa' },
+  rowMain: { flex: 1, minWidth: 0 },
+  rowTitle: { fontSize: '13px', color: '#ddd', fontWeight: '500', marginBottom: '4px' },
+  strikethrough: { textDecoration: 'line-through', color: '#444' },
+  rowMeta: { display: 'flex', alignItems: 'center', gap: '8px' },
+  projectTag: { fontSize: '11px', color: '#a78bfa', background: '#2d1f4e', padding: '2px 8px', borderRadius: '4px' },
+  dueTag: { fontSize: '11px', color: '#555' },
+  assignee: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  statusBadge: { fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: '1px solid', flexShrink: 0 },
+}
+
+export default Tasks

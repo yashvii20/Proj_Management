@@ -1,0 +1,73 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0f0f;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input, textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .sidebar-desktop {
+    display: none !important;
+  }
+}
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column !important;
+  }
+}
+@media (max-width: 768px) {
+  .detail-modal-inner {
+    flex-direction: column !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+
+  .detail-modal-left {
+    min-height: 220px !important;
+    max-height: 260px !important;
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  .detail-modal-right {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid #1e1e1e !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+}
