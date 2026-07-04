@@ -99,7 +99,7 @@ function Dashboard() {
               <div style={s.emptyIcon}>🏗</div>
               <div style={s.emptyTitle}>No projects yet</div>
               <div style={s.emptySub}>Create your first project to get started</div>
-              <button style={s.btnNew} onClick={() => navigate('/projects')}>+ Create project</button>
+              <button style={{ ...s.btnNew, alignSelf: 'center' }} onClick={() => navigate('/projects')}>+ Create project</button>
             </div>
           )}
         </div>
