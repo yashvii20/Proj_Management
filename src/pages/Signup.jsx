@@ -35,7 +35,7 @@ function Signup() {
       <div style={s.card}>
         <div style={s.logo}>AC</div>
         <h1 style={s.title}>Create account</h1>
-        <p style={s.sub}>Join your team on Architect Collab</p>
+        <p style={s.sub}>Join your team on Atelier</p>
         {error && <div style={s.error}>{error}</div>}
         <form onSubmit={handleSignup}>
           <div style={s.field}>

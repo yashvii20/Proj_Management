@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import jsPDF from 'jspdf'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
 import Comments from '../components/Comments'
+import ActivityFeed from '../pages/ActivityFeed'
+import { logActivity } from '../utils/logActivity'
 
 const PeopleIcon = () => (
   <svg width='15' height='15' viewBox='0 0 24 24' fill='none'>
@@ -10,6 +13,14 @@ const PeopleIcon = () => (
     <circle cx='16.5' cy='9.5' r='2.3' stroke='#777' strokeWidth='1.5' />
     <path d='M4 19c0-3 2.3-5.2 5-5.2s5 2.2 5 5.2' stroke='#777' strokeWidth='1.5' strokeLinecap='round' />
     <path d='M14.5 19c0-2.1 1.1-3.7 2.8-4.5' stroke='#777' strokeWidth='1.5' strokeLinecap='round' />
+  </svg>
+)
+
+const DownloadIcon = () => (
+  <svg width='15' height='15' viewBox='0 0 24 24' fill='none'>
+    <path d='M12 3v12' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' />
+    <path d='M7 10l5 5 5-5' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
+    <path d='M4 19h16' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' />
   </svg>
 )
 
@@ -55,6 +66,7 @@ function ProjectDetail() {
   const [editingDesc, setEditingDesc] = useState(false)
   const [editDesc, setEditDesc] = useState('')
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 768)
@@ -88,10 +100,110 @@ function ProjectDetail() {
     setTasks(data || [])
   }
 
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
+  const getProfileName = (userId) => profiles.find(p => p.id === userId)?.full_name || 'Unassigned'
+
+  const statuses = ['todo', 'inprogress', 'done']
+  const statusLabel = { todo: 'To do', inprogress: 'In progress', done: 'Done' }
+  const statusColor = { todo: '#444', inprogress: '#a78bfa', done: '#4ade80' }
+
+  const handleExportPDF = () => {
+    setExporting(true)
+    try {
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const marginX = 14
+      let y = 20
+
+      doc.setFontSize(18)
+      doc.setTextColor(20)
+      doc.text(project?.name || 'Project summary', marginX, y)
+      y += 8
+
+      if (project?.description) {
+        doc.setFontSize(10)
+        doc.setTextColor(110)
+        const descLines = doc.splitTextToSize(project.description, pageWidth - marginX * 2)
+        doc.text(descLines, marginX, y)
+        y += descLines.length * 5 + 4
+      }
+
+      doc.setFontSize(8)
+      doc.setTextColor(150)
+      doc.text('Exported ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }), marginX, y)
+      y += 10
+      doc.setDrawColor(230)
+      doc.line(marginX, y, pageWidth - marginX, y)
+      y += 10
+
+      doc.setFontSize(13)
+      doc.setTextColor(20)
+      doc.text('Summary', marginX, y)
+      y += 8
+
+      doc.setFontSize(10)
+      doc.setTextColor(60)
+      statuses.forEach(status => {
+        const count = tasks.filter(t => t.status === status).length
+        doc.text(statusLabel[status] + ':  ' + count, marginX, y)
+        y += 6
+      })
+      doc.text('Total tasks:  ' + tasks.length, marginX, y)
+      y += 6
+      doc.text('Team members:  ' + profiles.length, marginX, y)
+      y += 12
+
+      doc.setFontSize(13)
+      doc.setTextColor(20)
+      doc.text('Tasks', marginX, y)
+      y += 8
+
+      if (tasks.length === 0) {
+        doc.setFontSize(10)
+        doc.setTextColor(140)
+        doc.text('No tasks yet.', marginX, y)
+        y += 6
+      }
+
+      tasks.forEach(task => {
+        if (y > 275) { doc.addPage(); y = 20 }
+        doc.setFontSize(10.5)
+        doc.setTextColor(20)
+        const titleLines = doc.splitTextToSize(task.title, pageWidth - marginX * 2 - 10)
+        doc.text(titleLines, marginX, y)
+        y += titleLines.length * 5.5
+
+        doc.setFontSize(9)
+        doc.setTextColor(120)
+        const assignee = getProfileName(task.assigned_to)
+        const due = task.due_date ? new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No due date'
+        const metaLine = statusLabel[task.status] + '   |   ' + assignee + '   |   ' + due
+        doc.text(metaLine, marginX, y)
+        y += 9
+      })
+
+      const fileSafeName = (project?.name || 'project').replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+      doc.save(fileSafeName + '_summary.pdf')
+
+      logActivity({
+        projectId: id,
+        actorId: currentUser?.id,
+        actorName: getProfileName(currentUser?.id),
+        action: 'project_exported',
+        entityType: 'project',
+        entityId: id,
+        message: 'exported a PDF summary of this project',
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const handleCreate = async (e) => {
     e.preventDefault()
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
+    const taskTitle = title
     await supabase.from('tasks').insert({
       project_id: id,
       title,
@@ -100,6 +212,14 @@ function ProjectDetail() {
       assigned_to: assignedTo || null,
       created_by: user.id,
       status: 'todo',
+    })
+    logActivity({
+      projectId: id,
+      actorId: user.id,
+      actorName: getProfileName(user.id),
+      action: 'task_created',
+      entityType: 'task',
+      message: `created task "${taskTitle}"`,
     })
     setTitle('')
     setDescription('')
@@ -111,7 +231,19 @@ function ProjectDetail() {
   }
 
   const updateStatus = async (taskId, status) => {
+    const task = tasks.find(t => t.id === taskId)
     await supabase.from('tasks').update({ status }).eq('id', taskId)
+    if (task) {
+      logActivity({
+        projectId: id,
+        actorId: currentUser?.id,
+        actorName: getProfileName(currentUser?.id),
+        action: 'task_status_changed',
+        entityType: 'task',
+        entityId: taskId,
+        message: `moved "${task.title}" to ${statusLabel[status]}`,
+      })
+    }
     fetchTasks()
     if (selectedTask && selectedTask.id === taskId) setSelectedTask({ ...selectedTask, status })
   }
@@ -137,22 +269,37 @@ function ProjectDetail() {
 
   const handleAssign = async (userId) => {
     await supabase.from('tasks').update({ assigned_to: userId || null }).eq('id', selectedTask.id)
+    logActivity({
+      projectId: id,
+      actorId: currentUser?.id,
+      actorName: getProfileName(currentUser?.id),
+      action: 'task_assigned',
+      entityType: 'task',
+      entityId: selectedTask.id,
+      message: userId ? `assigned "${selectedTask.title}" to ${getProfileName(userId)}` : `unassigned "${selectedTask.title}"`,
+    })
     setSelectedTask({ ...selectedTask, assigned_to: userId || null })
     fetchTasks()
   }
 
   const handleDeleteTask = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId)
     await supabase.from('tasks').delete().eq('id', taskId)
+    if (task) {
+      logActivity({
+        projectId: id,
+        actorId: currentUser?.id,
+        actorName: getProfileName(currentUser?.id),
+        action: 'task_deleted',
+        entityType: 'task',
+        entityId: taskId,
+        message: `deleted task "${task.title}"`,
+      })
+    }
     setShowDetail(false)
     fetchTasks()
   }
 
-  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
-  const getProfileName = (userId) => profiles.find(p => p.id === userId)?.full_name || 'Unassigned'
-
-  const statuses = ['todo', 'inprogress', 'done']
-  const statusLabel = { todo: 'To do', inprogress: 'In progress', done: 'Done' }
-  const statusColor = { todo: '#444', inprogress: '#a78bfa', done: '#4ade80' }
   const myTasks = filter === 'all' ? tasks : tasks.filter(t => t.assigned_to === currentUser?.id)
 
   return (
@@ -166,15 +313,21 @@ function ProjectDetail() {
             </div>
             <div style={m.titleRow}>
               <div style={m.pageTitle}>{project?.name || '...'}</div>
-              <div style={m.memberBadge}>
-                <PeopleIcon />
-                <span>{profiles.length}</span>
+              <div style={m.headerRight}>
+                <div style={m.memberBadge}>
+                  <PeopleIcon />
+                  <span>{profiles.length}</span>
+                </div>
+                <button style={m.exportIconBtn} onClick={handleExportPDF} disabled={exporting} title='Export PDF summary'>
+                  <DownloadIcon />
+                </button>
               </div>
             </div>
             <div style={m.controlsRow}>
               <div style={m.viewToggle}>
                 <div style={{ ...m.toggleBtn, ...(view === 'kanban' ? m.toggleActive : {}) }} onClick={() => setView('kanban')}>Kanban</div>
                 <div style={{ ...m.toggleBtn, ...(view === 'list' ? m.toggleActive : {}) }} onClick={() => setView('list')}>List</div>
+                <div style={{ ...m.toggleBtn, ...(view === 'activity' ? m.toggleActive : {}) }} onClick={() => setView('activity')}>Activity</div>
               </div>
               <button style={m.btnNew} onClick={() => setShowModal(true)}>+ Add task</button>
             </div>
@@ -190,26 +343,34 @@ function ProjectDetail() {
               <div style={s.viewToggle}>
                 <div style={{ ...s.toggleBtn, ...(view === 'kanban' ? s.toggleActive : {}) }} onClick={() => setView('kanban')}>Kanban</div>
                 <div style={{ ...s.toggleBtn, ...(view === 'list' ? s.toggleActive : {}) }} onClick={() => setView('list')}>List</div>
+                <div style={{ ...s.toggleBtn, ...(view === 'activity' ? s.toggleActive : {}) }} onClick={() => setView('activity')}>Activity</div>
               </div>
+              <button style={s.btnExport} onClick={handleExportPDF} disabled={exporting}>
+                <DownloadIcon /> {exporting ? 'Exporting...' : 'Export'}
+              </button>
               <button style={s.btnNew} onClick={() => setShowModal(true)}>+ Add task</button>
             </div>
           </div>
         )}
 
-        {isMobile ? (
-          <div style={m.filterBar}>
-            <div style={{ ...m.filterTab, ...(filter === 'all' ? m.filterTabActive : {}) }} onClick={() => setFilter('all')}>All tasks</div>
-            <div style={{ ...m.filterTab, ...(filter === 'mine' ? m.filterTabActive : {}) }} onClick={() => setFilter('mine')}>My tasks</div>
-          </div>
-        ) : (
-          <div style={s.filterBar}>
-            <div style={{ ...s.filterBtn, ...(filter === 'all' ? s.filterActive : {}) }} onClick={() => setFilter('all')}>All tasks</div>
-            <div style={{ ...s.filterBtn, ...(filter === 'mine' ? s.filterActive : {}) }} onClick={() => setFilter('mine')}>My tasks</div>
-          </div>
+        {view !== 'activity' && (
+          isMobile ? (
+            <div style={m.filterBar}>
+              <div style={{ ...m.filterTab, ...(filter === 'all' ? m.filterTabActive : {}) }} onClick={() => setFilter('all')}>All tasks</div>
+              <div style={{ ...m.filterTab, ...(filter === 'mine' ? m.filterTabActive : {}) }} onClick={() => setFilter('mine')}>My tasks</div>
+            </div>
+          ) : (
+            <div style={s.filterBar}>
+              <div style={{ ...s.filterBtn, ...(filter === 'all' ? s.filterActive : {}) }} onClick={() => setFilter('all')}>All tasks</div>
+              <div style={{ ...s.filterBtn, ...(filter === 'mine' ? s.filterActive : {}) }} onClick={() => setFilter('mine')}>My tasks</div>
+            </div>
+          )
         )}
 
         <div style={isMobile ? m.content : s.content}>
-          {view === 'kanban' ? (
+          {view === 'activity' ? (
+            <ActivityFeed projectId={id} embedded />
+          ) : view === 'kanban' ? (
             <div style={isMobile ? m.kanban : s.kanban}>
               {statuses.map(status => (
                 <div key={status} style={isMobile ? m.column : s.column}>
@@ -363,6 +524,7 @@ const s = {
   toggleBtn: { padding: '6px 14px', fontSize: '12px', color: '#555', cursor: 'pointer' },
   toggleActive: { background: '#2a2a2a', color: '#fff' },
   btnNew: { background: '#a78bfa', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+  btnExport: { display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', color: '#ccc', border: '1px solid #2a2a2a', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' },
   filterBar: { display: 'flex', gap: '8px', padding: '12px 28px', borderBottom: '1px solid #1a1a1a' },
   filterBtn: { padding: '5px 14px', borderRadius: '20px', fontSize: '12px', color: '#555', cursor: 'pointer', border: '1px solid transparent' },
   filterActive: { border: '1px solid #2a2a2a', color: '#fff', background: '#1e1e1e' },
@@ -427,7 +589,9 @@ const m = {
   backChevron: { fontSize: '17px', lineHeight: 1, marginRight: '2px' },
   titleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
   pageTitle: { fontSize: '24px', fontWeight: '700', color: '#fff' },
+  headerRight: { display: 'flex', alignItems: 'center', gap: '10px' },
   memberBadge: { display: 'flex', alignItems: 'center', gap: '5px', color: '#777', fontSize: '13px' },
+  exportIconBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: '#1c1c1c', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#ccc', cursor: 'pointer' },
   controlsRow: { display: 'flex', alignItems: 'center', gap: '10px' },
   viewToggle: { display: 'flex', background: '#1c1c1c', borderRadius: '10px', padding: '3px', flex: 1 },
   toggleBtn: { flex: 1, textAlign: 'center', padding: '9px 0', fontSize: '13px', fontWeight: '600', color: '#777', cursor: 'pointer', borderRadius: '8px' },

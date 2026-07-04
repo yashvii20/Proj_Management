@@ -26,7 +26,7 @@ function Login() {
     <div style={s.page}>
       <div style={s.card}>
         <div style={s.logo}>AC</div>
-        <h1 style={s.title}>Architect Collab</h1>
+        <h1 style={s.title}>Atelier</h1>
         <p style={s.sub}>Sign in to your workspace</p>
         {error && <div style={s.error}>{error}</div>}
         <form onSubmit={handleLogin}>
@@ -58,6 +58,8 @@ function Login() {
         </form>
         <p style={s.footer}>
           No account? <Link to="/signup" style={s.link}>Sign up</Link>
+          {' · '}
+          <Link to="/forgot-password" style={s.link}>Forgot password?</Link>
         </p>
       </div>
     </div>

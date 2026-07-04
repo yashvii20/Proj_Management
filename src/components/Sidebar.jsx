@@ -39,21 +39,23 @@ function Sidebar() {
   const colors = ['#a78bfa', '#4ade80', '#f59e0b', '#f87171', '#38bdf8']
 
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', tip: 'Overview and stats' },
-    { label: 'Projects', path: '/projects', tip: 'All your projects' },
-    { label: 'Tasks', path: '/tasks', tip: 'Every task, filterable' },
-    { label: 'Mood board', path: '/moodboard', tip: 'Visual references' },
+    { label: 'Dashboard', path: '/dashboard', tip: 'Overview and stats', icon: '⊞' },
+    { label: 'Projects', path: '/projects', tip: 'All your projects', icon: '▦' },
+    { label: 'Tasks', path: '/tasks', tip: 'Every task, filterable', icon: '✓' },
+    { label: 'Mood board', path: '/moodboard', tip: 'Visual references', icon: '🖼' },
+    { label: 'Activity', path: '/activity', tip: 'Team activity feed', icon: '◎' },
   ]
 
   const sidebarContent = (
     React.createElement(React.Fragment, null,
       React.createElement('div', { style: s.logo },
-        React.createElement('div', { style: s.logoIcon }, 'AC'),
-        React.createElement('span', { style: s.logoText }, 'Architect Collab'),
+        React.createElement('div', { style: s.logoIcon }, 'AT'),
+        React.createElement('span', { style: s.logoText }, 'Atelier'),
         React.createElement('div', { style: s.mobileClose, onClick: function() { setMobileOpen(false) } }, 'x')
       ),
       React.createElement('div', { className: 'nav-row', onClick: function() { navigate('/notifications') } },
         React.createElement('div', { className: 'nav-item' + (location.pathname === '/notifications' ? ' nav-active' : '') },
+          React.createElement('span', { style: { fontSize: '15px', width: '18px', textAlign: 'center' } }, '🔔'),
           React.createElement('span', null, 'Notifications'),
           unreadCount > 0 && React.createElement('span', { style: s.badge }, unreadCount),
           React.createElement('span', { className: 'nav-tip' }, 'See your updates')
@@ -63,7 +65,8 @@ function Sidebar() {
         navItems.map(function(item) {
           return React.createElement('div', { key: item.label, className: 'nav-row', onClick: function() { navigate(item.path) } },
             React.createElement('div', { className: 'nav-item' + (location.pathname === item.path ? ' nav-active' : '') },
-              React.createElement('span', null, item.label),
+            React.createElement('span', { style: { fontSize: '15px', width: '18px', textAlign: 'center' } }, item.icon),
+            React.createElement('span', null, item.label),
               React.createElement('span', { className: 'nav-tip' }, item.tip)
             )
           )
@@ -80,12 +83,16 @@ function Sidebar() {
       }),
       projects.length === 0 && React.createElement('div', { style: s.noProjects }, 'No projects yet'),
       React.createElement('div', { style: s.userRow },
-        React.createElement('div', { style: s.avatar }, initials),
-        React.createElement('div', null,
-          React.createElement('div', { style: s.userName }, profile ? profile.full_name : '...'),
-          React.createElement('div', { style: s.userRole }, profile ? profile.role : 'member')
+        React.createElement('div', { style: s.userInfoClickable, className: 'user-info-clickable', onClick: function() { navigate('/profile') } },
+          profile && profile.avatar_url
+            ? React.createElement('img', { src: profile.avatar_url, alt: 'avatar', style: s.avatarImg, onError: function(e) { e.target.style.display = 'none' } })
+            : React.createElement('div', { style: s.avatar }, initials),
+          React.createElement('div', { style: s.userTextWrap },
+            React.createElement('div', { style: s.userName }, profile ? profile.full_name : '...'),
+            React.createElement('div', { style: s.userRole }, profile ? profile.role : 'member')
+          )
         ),
-        React.createElement('div', { style: s.logoutBtn, onClick: handleLogout }, 'exit')
+        React.createElement('div', { style: s.logoutBtn, onClick: function(e) { e.stopPropagation(); handleLogout() } }, 'exit')
       )
     )
   )
@@ -98,7 +105,7 @@ function Sidebar() {
           React.createElement('div', { style: s.hamburgerLine }),
           React.createElement('div', { style: s.hamburgerLine })
         ),
-        React.createElement('div', { style: s.mobileLogoText }, 'Architect Collab'),
+        React.createElement('div', { style: s.mobileLogoText }, 'Atelier'),
         React.createElement('div', { style: s.bellWrap, onClick: function() { navigate('/notifications') } },
           React.createElement('div', { style: s.bellIcon }, String.fromCodePoint(0x1F514)),
           unreadCount > 0 && React.createElement('div', { style: s.bellBadge }, unreadCount)
@@ -106,7 +113,7 @@ function Sidebar() {
       ),
       React.createElement('div', { style: s.sidebar, className: 'sidebar-desktop' }, sidebarContent),
       mobileOpen && React.createElement('div', { style: s.mobileOverlay, className: 'mobile-overlay-active', onClick: function() { setMobileOpen(false) } },
-        React.createElement('div', { style: s.mobileSidebar, onClick: function(e) { e.stopPropagation() } }, sidebarContent)
+      React.createElement('div', { style: s.mobileSidebar, className: 'mobile-drawer', onClick: function(e) { e.stopPropagation() } }, sidebarContent)
       ),
       React.createElement('style', null, globalCss)
     )
@@ -114,13 +121,9 @@ function Sidebar() {
 }
 
 const globalCss = [
-'@media (max-width: 768px) {',
-'  .sidebar-desktop { display: none !important; }',
-'  .mobile-topbar { display: flex !important; }',
-'  .mobile-overlay-active { display: flex !important; }',
-'}',
+'@media (max-width: 768px) { .sidebar-desktop { display: none !important; } .mobile-topbar { display: flex !important; } .mobile-overlay-active { display: flex !important; } }',
 '.nav-row { position: relative; }',
-'.nav-item { display: flex; align-items: center; gap: 8px; padding: 9px 16px; font-size: 13px; color: #888; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease; border-radius: 0 20px 20px 0; margin-right: 10px; position: relative; }',
+'.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; font-size: 13px; color: #888; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease; border-radius: 0 20px 20px 0; margin-right: 10px; position: relative; }',
 '.nav-item:hover { background: #1c1c1c; color: #ddd; transform: translateX(2px); }',
 '.nav-item:active { transform: translateX(2px) scale(0.97); background: #222; }',
 '.nav-active { background: #241c3a !important; color: #a78bfa !important; font-weight: 500; }',
@@ -131,6 +134,10 @@ const globalCss = [
 '.proj-item { display: flex; align-items: center; gap: 8px; padding: 6px 16px; cursor: pointer; border-radius: 0 20px 20px 0; margin-right: 10px; transition: background 0.12s ease; }',
 '.proj-item:hover { background: #1c1c1c; }',
 '.proj-item:active { background: #222; transform: scale(0.98); }',
+'.user-info-clickable { transition: background 0.12s ease; border-radius: 8px; }',
+'.user-info-clickable:hover { background: #1c1c1c; }',
+'.mobile-drawer { animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1); }',
+'@keyframes slideIn { from { transform: translateX(-100%); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }',
 ].join(' ')
 
 const s = {
@@ -154,11 +161,14 @@ const s = {
   projectName: { fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   dot: { width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0 },
   noProjects: { fontSize: '12px', color: '#333', padding: '6px 16px' },
-  userRow: { display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', marginTop: 'auto', borderTop: '1px solid #1e1e1e' },
+  userRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 10px 10px 16px', marginTop: 'auto', borderTop: '1px solid #1e1e1e' },
+  userInfoClickable: { display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flex: 1, minWidth: 0, padding: '4px 6px' },
+  userTextWrap: { minWidth: 0 },
   avatar: { width: '30px', height: '30px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  userName: { fontSize: '12px', color: '#ccc', fontWeight: '500' },
+  avatarImg: { width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 },
+  userName: { fontSize: '12px', color: '#ccc', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   userRole: { fontSize: '11px', color: '#444', textTransform: 'capitalize' },
-  logoutBtn: { marginLeft: 'auto', fontSize: '11px', color: '#444', cursor: 'pointer' },
+  logoutBtn: { fontSize: '11px', color: '#444', cursor: 'pointer', flexShrink: 0, padding: '4px 6px' },
 }
 
 export default Sidebar

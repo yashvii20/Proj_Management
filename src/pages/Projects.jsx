@@ -11,6 +11,7 @@ function Projects() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
+  const [taskStats, setTaskStats] = useState({})
 
   const colors = ['#a78bfa', '#4ade80', '#f59e0b', '#f87171', '#38bdf8']
 
@@ -25,6 +26,21 @@ function Projects() {
       .order('created_at', { ascending: false })
     setProjects(data || [])
     setLoading(false)
+    if (data && data.length > 0) fetchTaskStats(data)
+  }
+
+  const fetchTaskStats = async (projects) => {
+    const stats = {}
+    await Promise.all(projects.map(async (p) => {
+      const { data } = await supabase
+        .from('tasks')
+        .select('status')
+        .eq('project_id', p.id)
+      const total = data?.length || 0
+      const done = data?.filter(t => t.status === 'done').length || 0
+      stats[p.id] = { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 }
+    }))
+    setTaskStats(stats)
   }
 
   const handleCreate = async (e) => {
@@ -74,24 +90,48 @@ function Projects() {
           )}
 
           <div style={s.grid}>
-            {projects.map((p, i) => (
-              <div
-                key={p.id}
-                style={s.card}
-                onClick={() => navigate(`/projects/${p.id}`)}
-              >
-                <div style={{ ...s.cardTop, background: colors[i % colors.length] + '22', borderBottom: `1px solid ${colors[i % colors.length]}33` }}>
-                  <div style={{ ...s.cardDot, background: colors[i % colors.length] }} />
-                </div>
-                <div style={s.cardBody}>
-                  <div style={s.cardTitle}>{p.name}</div>
-                  <div style={s.cardDesc}>{p.description || 'No description'}</div>
-                  <div style={s.cardMeta}>
-                    {new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {projects.map((p, i) => {
+              const stats = taskStats[p.id]
+              return (
+                <div
+                  key={p.id}
+                  style={s.card}
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                >
+                  <div style={s.cardDeleteBtn} onClick={async (e) => {
+                    e.stopPropagation()
+                    if (window.confirm('Delete project "' + p.name + '"? This will delete all tasks, mood board items and comments in it.')) {
+                      await supabase.from('projects').delete().eq('id', p.id)
+                      fetchProjects()
+                    }
+                  }}>✕</div>
+                  <div style={s.cardBody}>
+                    <div style={s.cardTitle}>{p.name}</div>
+                    <div style={s.cardDesc}>{p.description || 'No description'}</div>
+                    {stats && (
+                      <div style={s.progressWrap}>
+                        <div style={s.progressBar}>
+                          <div style={{
+                            ...s.progressFill,
+                            width: stats.percent + '%',
+                            background: colors[i % colors.length]
+                          }} />
+                        </div>
+                        <div style={s.progressLabel}>
+                          {stats.done}/{stats.total} tasks completed
+                        </div>
+                      </div>
+                    )}
+                    {stats && stats.total === 0 && (
+                      <div style={s.progressLabel}>No tasks yet</div>
+                    )}
+                    <div style={s.cardMeta}>
+                      {new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
@@ -171,13 +211,31 @@ const s = {
   card: {
     background: '#161616', border: '1px solid #1e1e1e',
     borderRadius: '12px', overflow: 'hidden', cursor: 'pointer',
+    position: 'relative',
   },
-  cardTop: { height: '80px', display: 'flex', alignItems: 'center', padding: '16px' },
+  cardTop: {
+    height: '80px', display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', padding: '16px',
+  },
   cardDot: { width: '10px', height: '10px', borderRadius: '50%' },
+  cardTopBadge: {
+    fontSize: '11px', color: '#fff', background: 'rgba(0,0,0,0.3)',
+    padding: '3px 8px', borderRadius: '10px',
+  },
   cardBody: { padding: '16px' },
   cardTitle: { fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '6px' },
   cardDesc: { fontSize: '12px', color: '#555', marginBottom: '12px', lineHeight: '1.5' },
-  cardMeta: { fontSize: '11px', color: '#444' },
+  cardMeta: { fontSize: '11px', color: '#444', marginTop: '8px' },
+  progressWrap: { marginBottom: '8px' },
+  progressBar: {
+    height: '4px', background: '#2a2a2a', borderRadius: '4px',
+    overflow: 'hidden', marginBottom: '5px',
+  },
+  progressFill: {
+    height: '100%', borderRadius: '4px',
+    transition: 'width 0.4s ease',
+  },
+  progressLabel: { fontSize: '11px', color: '#555' },
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
@@ -201,6 +259,22 @@ const s = {
     background: 'transparent', color: '#666', border: '1px solid #2a2a2a',
     padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
   },
+  cardDeleteBtn: {
+  position: 'absolute',
+  top: '8px',
+  right: '8px',
+  width: '24px',
+  height: '24px',
+  borderRadius: '50%',
+  background: 'rgba(0,0,0,0.5)',
+  color: '#888',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '11px',
+  cursor: 'pointer',
+  zIndex: 1,
+},
 }
 
 export default Projects

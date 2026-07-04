@@ -8,6 +8,10 @@ import MoodBoard from './pages/MoodBoard'
 import ProtectedRoute from './components/ProtectedRoute'
 import Notifications from './pages/Notifications'
 import Tasks from './pages/Tasks'
+import ActivityFeed from './pages/ActivityFeed'
+import Profile from './pages/Profile'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -21,7 +25,11 @@ function App() {
         <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
         <Route path="/moodboard" element={<ProtectedRoute><MoodBoard /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />     
+        <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+        <Route path="/activity" element={<ProtectedRoute><ActivityFeed /></ProtectedRoute>} />
+        <Route path="/profile" element={<Profile />} />   
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />  
       </Routes>
     </BrowserRouter>
   )
