@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
+import { theme } from '../theme'
 
 function Notifications() {
   const navigate = useNavigate()
@@ -67,11 +68,17 @@ function Notifications() {
           )}
         </div>
         <div style={s.content}>
-          {loading && <div style={s.empty}>Loading...</div>}
+          {loading && <div style={s.empty}>Loading…</div>}
           {!loading && notifications.length === 0 && (
             <div style={s.emptyState}>
+              <div style={s.emptyIcon}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.color.accent} strokeWidth="1.6">
+                  <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.7 21a2 2 0 01-3.4 0" />
+                </svg>
+              </div>
               <div style={s.emptyTitle}>No notifications yet</div>
-              <div style={s.emptySub}>You will see updates here when teammates comment on your work</div>
+              <div style={s.emptySub}>You'll see updates here when teammates comment on your work.</div>
             </div>
           )}
           <div style={s.list}>
@@ -98,30 +105,35 @@ function Notifications() {
   )
 }
 
-const styleTag = '.notif-row { transition: all 0.15s ease; } .notif-row:hover { background: #1a1a1a !important; border-color: #2a2a2a !important; transform: translateX(2px); }'
+const styleTag = `
+  .notif-row { transition: border-color 0.15s ease; }
+  .notif-row:hover { border-color: ${theme.color.accent} !important; }
+  .btn-mark:hover { filter: brightness(0.96); }
+`
 
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: theme.color.bg, color: theme.color.ink, fontFamily: theme.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #1a1a1a' },
-  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  pageSub: { fontSize: '13px', color: '#555' },
-  btnMark: { background: 'transparent', color: '#a78bfa', border: '1px solid #2a2a2a', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' },
-  content: { flex: 1, overflowY: 'auto', padding: '20px 28px' },
-  empty: { color: '#555', fontSize: '14px' },
-  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '8px' },
-  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  emptySub: { fontSize: '13px', color: '#555', textAlign: 'center', maxWidth: '320px' },
-  list: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  row: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', borderRadius: '10px', cursor: 'pointer', border: '1px solid transparent' },
-  rowUnread: { background: '#161616', border: '1px solid #1e1e1e' },
-  dot: { width: '8px', height: '8px', borderRadius: '50%', background: '#a78bfa', flexShrink: 0, marginTop: '6px' },
-  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 28px', borderBottom: `1px solid ${theme.color.border}` },
+  pageTitle: { fontFamily: theme.font.display, fontSize: '22px', fontWeight: 600, color: theme.color.ink, marginBottom: '4px' },
+  pageSub: { fontSize: '13px', color: theme.color.muted },
+  btnMark: { background: theme.color.surface, color: theme.color.ink, border: `1px solid ${theme.color.border}`, padding: '8px 15px', borderRadius: theme.radius.sm, fontSize: '12.5px', fontWeight: 500, cursor: 'pointer' },
+  content: { flex: 1, overflowY: 'auto', padding: '24px 28px' },
+  empty: { color: theme.color.muted, fontSize: '14px' },
+  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '90px 20px', gap: '6px' },
+  emptyIcon: { width: '52px', height: '52px', borderRadius: '50%', background: theme.color.surface, border: `1px solid ${theme.color.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' },
+  emptyTitle: { fontFamily: theme.font.display, fontSize: '17px', fontWeight: 600, color: theme.color.ink },
+  emptySub: { fontSize: '13px', color: theme.color.muted, textAlign: 'center', maxWidth: '320px', lineHeight: 1.6 },
+  list: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  row: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', borderRadius: theme.radius.md, cursor: 'pointer', background: theme.color.surface, border: `1px solid ${theme.color.border}` },
+  rowUnread: { borderColor: theme.color.accent },
+  dot: { width: '7px', height: '7px', borderRadius: '50%', background: theme.color.accent, flexShrink: 0, marginTop: '7px' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: theme.color.bg, color: theme.color.accent, fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   rowContent: { flex: 1 },
-  rowMessage: { fontSize: '13px', color: '#ddd', marginBottom: '5px' },
-  rowComment: { fontSize: '12px', color: '#999', fontStyle: 'italic', background: '#1a1a1a', padding: '7px 10px', borderRadius: '7px', marginBottom: '5px', lineHeight: '1.5' },
-  rowMeta: { fontSize: '11px', color: '#555' },
-  rowTime: { fontSize: '11px', color: '#444', flexShrink: 0, marginTop: '2px' },
+  rowMessage: { fontSize: '13.5px', color: theme.color.ink, marginBottom: '5px' },
+  rowComment: { fontSize: '12.5px', color: theme.color.muted, fontStyle: 'italic', background: theme.color.bg, padding: '8px 11px', borderRadius: theme.radius.sm, marginBottom: '5px', lineHeight: 1.5 },
+  rowMeta: { fontSize: '11.5px', color: theme.color.muted },
+  rowTime: { fontSize: '11.5px', color: theme.color.muted, flexShrink: 0, marginTop: '2px' },
 }
 
 export default Notifications

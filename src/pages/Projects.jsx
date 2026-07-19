@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
+import { theme as t } from '../theme'
 
 function Projects() {
   const navigate = useNavigate()
@@ -13,7 +14,7 @@ function Projects() {
   const [saving, setSaving] = useState(false)
   const [taskStats, setTaskStats] = useState({})
 
-  const colors = ['#a78bfa', '#4ade80', '#f59e0b', '#f87171', '#38bdf8']
+  const colors = [t.color.accent, '#7A8B6F', '#8E7BA0', '#B0745A', '#5E8B8B']
 
   useEffect(() => {
     fetchProjects()
@@ -181,100 +182,85 @@ function Projects() {
 }
 
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: t.color.bg, color: t.color.ink, fontFamily: t.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   topbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '20px 28px', borderBottom: '1px solid #1a1a1a',
+    padding: '28px 40px 20px',
   },
-  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  pageSub: { fontSize: '13px', color: '#555' },
+  pageTitle: { fontFamily: t.font.display, fontSize: '28px', fontWeight: '700', color: t.color.ink, marginBottom: '4px' },
+  pageSub: { fontSize: '14px', color: t.color.muted },
   btnNew: {
-    background: '#a78bfa', color: '#fff', border: 'none',
-    padding: '8px 16px', borderRadius: '8px', fontSize: '13px',
-    fontWeight: '600', cursor: 'pointer',
+    background: t.color.primary, color: t.color.primaryText, border: 'none',
+    padding: '11px 20px', borderRadius: t.radius.sm, fontSize: '13px',
+    fontWeight: '600', fontFamily: t.font.body, cursor: 'pointer',
   },
-  content: { flex: 1, overflowY: 'auto', padding: '24px 28px' },
-  empty: { color: '#555', fontSize: '14px' },
+  content: { flex: 1, overflowY: 'auto', padding: '8px 40px 40px' },
+  empty: { color: t.color.muted, fontSize: '14px' },
   emptyState: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', padding: '80px 20px', gap: '10px',
   },
   emptyIcon: { fontSize: '40px', marginBottom: '8px' },
-  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  emptySub: { fontSize: '13px', color: '#555', marginBottom: '8px' },
+  emptyTitle: { fontFamily: t.font.display, fontSize: '18px', fontWeight: '700', color: t.color.ink },
+  emptySub: { fontSize: '13px', color: t.color.muted, marginBottom: '8px' },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
     gap: '16px',
   },
   card: {
-    background: '#161616', border: '1px solid #1e1e1e',
-    borderRadius: '12px', overflow: 'hidden', cursor: 'pointer',
+    background: t.color.surface, border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.md, overflow: 'hidden', cursor: 'pointer',
     position: 'relative',
   },
-  cardTop: {
-    height: '80px', display: 'flex', alignItems: 'center',
-    justifyContent: 'space-between', padding: '16px',
-  },
-  cardDot: { width: '10px', height: '10px', borderRadius: '50%' },
-  cardTopBadge: {
-    fontSize: '11px', color: '#fff', background: 'rgba(0,0,0,0.3)',
-    padding: '3px 8px', borderRadius: '10px',
-  },
-  cardBody: { padding: '16px' },
-  cardTitle: { fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '6px' },
-  cardDesc: { fontSize: '12px', color: '#555', marginBottom: '12px', lineHeight: '1.5' },
-  cardMeta: { fontSize: '11px', color: '#444', marginTop: '8px' },
-  progressWrap: { marginBottom: '8px' },
+  cardBody: { padding: '20px' },
+  cardTitle: { fontFamily: t.font.display, fontSize: '18px', fontWeight: '700', color: t.color.ink, marginBottom: '6px' },
+  cardDesc: { fontSize: '13px', color: t.color.muted, marginBottom: '14px', lineHeight: '1.5' },
+  cardMeta: { fontSize: '12px', color: t.color.muted, marginTop: '10px' },
+  progressWrap: { marginBottom: '10px' },
   progressBar: {
-    height: '4px', background: '#2a2a2a', borderRadius: '4px',
-    overflow: 'hidden', marginBottom: '5px',
+    height: '5px', background: t.color.border, borderRadius: '4px',
+    overflow: 'hidden', marginBottom: '6px',
   },
   progressFill: {
     height: '100%', borderRadius: '4px',
     transition: 'width 0.4s ease',
   },
-  progressLabel: { fontSize: '11px', color: '#555' },
+  progressLabel: { fontSize: '12px', color: t.color.muted },
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+    position: 'fixed', inset: 0, background: 'rgba(30,34,51,0.45)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+    padding: '20px', boxSizing: 'border-box',
   },
   modal: {
-    background: '#161616', border: '1px solid #2a2a2a',
-    borderRadius: '14px', padding: '24px', width: '100%', maxWidth: '420px',
+    background: t.color.surface, border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.lg, padding: '28px', width: '100%', maxWidth: '460px',
+    maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: '0 12px 40px rgba(30,34,51,0.18)', boxSizing: 'border-box',
   },
-  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' },
-  modalTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  closeBtn: { color: '#555', cursor: 'pointer', fontSize: '14px' },
-  field: { marginBottom: '16px' },
-  label: { display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px', fontWeight: '500' },
+  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' },
+  modalTitle: { fontFamily: t.font.display, fontSize: '22px', fontWeight: '700', color: t.color.ink },
+  closeBtn: { color: t.color.muted, cursor: 'pointer', fontSize: '16px' },
+  field: { marginBottom: '18px' },
+  label: { display: 'block', fontSize: '14px', color: t.color.ink, marginBottom: '8px', fontWeight: '600' },
   input: {
-    width: '100%', padding: '10px 14px', background: '#1e1e1e',
-    border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff',
-    fontSize: '14px', outline: 'none',
+    width: '100%', padding: '11px 14px', background: t.color.surface,
+    border: `1px solid ${t.color.border}`, borderRadius: t.radius.sm, color: t.color.ink,
+    fontSize: '14px', fontFamily: t.font.body, outline: 'none', boxSizing: 'border-box',
   },
-  modalFooter: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' },
+  modalFooter: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '22px' },
   btnCancel: {
-    background: 'transparent', color: '#666', border: '1px solid #2a2a2a',
-    padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+    background: t.color.surface, color: t.color.ink, border: `1px solid ${t.color.border}`,
+    padding: '11px 18px', borderRadius: t.radius.sm, fontSize: '13px', fontWeight: '600',
+    fontFamily: t.font.body, cursor: 'pointer',
   },
   cardDeleteBtn: {
-  position: 'absolute',
-  top: '8px',
-  right: '8px',
-  width: '24px',
-  height: '24px',
-  borderRadius: '50%',
-  background: 'rgba(0,0,0,0.5)',
-  color: '#888',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '11px',
-  cursor: 'pointer',
-  zIndex: 1,
-},
+    position: 'absolute', top: '10px', right: '10px', width: '26px', height: '26px',
+    borderRadius: '50%', background: t.color.bg, border: `1px solid ${t.color.border}`,
+    color: t.color.muted, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '11px', cursor: 'pointer', zIndex: 1,
+  },
 }
 
 export default Projects

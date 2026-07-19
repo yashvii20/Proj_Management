@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
+import { theme } from '../theme'
 
 function Comments({ taskId, moodboardItemId, attachmentId }) {
   const [comments, setComments] = useState([])
@@ -135,7 +136,7 @@ function Comments({ taskId, moodboardItemId, attachmentId }) {
     return parts.map((part, i) => {
       const isMention = sortedProfiles.some(p => '@' + p.full_name === part)
       if (isMention) {
-        return React.createElement('span', { key: i, style: { color: '#a78bfa', fontWeight: '600' } }, part)
+        return React.createElement('span', { key: i, style: { color: theme.color.accent, fontWeight: '600' } }, part)
       }
       return React.createElement('span', { key: i }, part)
     })
@@ -196,31 +197,31 @@ function Comments({ taskId, moodboardItemId, attachmentId }) {
 }
 
 const s = {
-  wrap: { borderTop: '1px solid #1e1e1e', paddingTop: '14px', marginTop: '8px' },
+  wrap: { borderTop: `1px solid ${theme.color.border}`, paddingTop: '14px', marginTop: '8px' },
   header: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' },
-  headerTitle: { fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  headerCount: { background: '#1e1e1e', color: '#555', fontSize: '11px', padding: '1px 7px', borderRadius: '10px' },
-  loading: { fontSize: '12px', color: '#555', padding: '6px 0' },
-  empty: { fontSize: '12px', color: '#444', padding: '8px 0', fontStyle: 'italic' },
+  headerTitle: { fontSize: '11px', fontWeight: '700', color: theme.color.muted, textTransform: 'uppercase', letterSpacing: '0.06em' },
+  headerCount: { background: theme.color.bg, color: theme.color.ink, fontSize: '11px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px' },
+  loading: { fontSize: '12px', color: theme.color.muted, padding: '6px 0' },
+  empty: { fontSize: '12px', color: theme.color.muted, padding: '8px 0', fontStyle: 'italic' },
   list: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px', maxHeight: '200px', overflowY: 'auto' },
   commentRow: { display: 'flex', gap: '8px', alignItems: 'flex-start' },
-  avatar: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' },
-  bubble: { flex: 1, background: '#1a1a1a', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px' },
+  avatar: { width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(176,141,87,0.18)', color: theme.color.accent, fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' },
+  bubble: { flex: 1, background: theme.color.bg, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, padding: '8px 10px' },
   bubbleHeader: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' },
-  authorName: { fontSize: '11px', fontWeight: '600', color: '#ccc' },
-  timestamp: { fontSize: '10px', color: '#444', flex: 1 },
-  deleteBtn: { fontSize: '10px', color: '#555', cursor: 'pointer' },
-  content: { fontSize: '12px', color: '#999', lineHeight: '1.5' },
+  authorName: { fontSize: '12px', fontWeight: '600', color: theme.color.ink },
+  timestamp: { fontSize: '10px', color: theme.color.muted, flex: 1 },
+  deleteBtn: { fontSize: '10.5px', color: theme.color.danger, cursor: 'pointer', fontWeight: '600' },
+  content: { fontSize: '12.5px', color: theme.color.ink, lineHeight: '1.5' },
   formWrap: { position: 'relative' },
-  mentionPopup: { position: 'absolute', bottom: '100%', left: '32px', right: 0, background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '6px', marginBottom: '4px', zIndex: 10 },
+  mentionPopup: { position: 'absolute', bottom: '100%', left: '32px', right: 0, background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, padding: '6px', marginBottom: '4px', zIndex: 10, boxShadow: '0 4px 16px rgba(30,34,51,0.12)' },
   mentionRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '6px', cursor: 'pointer' },
-  mentionAvatar: { width: '20px', height: '20px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  mentionName: { fontSize: '12px', color: '#ccc' },
+  mentionAvatar: { width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(176,141,87,0.18)', color: theme.color.accent, fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  mentionName: { fontSize: '12px', color: theme.color.ink },
   form: { marginTop: '4px' },
   inputRow: { display: 'flex', alignItems: 'center', gap: '6px' },
-  myAvatar: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  input: { flex: 1, padding: '8px 10px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#fff', fontSize: '12px', outline: 'none' },
-  submitBtn: { background: '#a78bfa', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' },
+  myAvatar: { width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(176,141,87,0.18)', color: theme.color.accent, fontSize: '9px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  input: { flex: 1, padding: '8px 10px', background: theme.color.bg, border: `1px solid ${theme.color.border}`, borderRadius: '7px', color: theme.color.ink, fontSize: '12px', outline: 'none', fontFamily: theme.font.body },
+  submitBtn: { background: theme.color.primary, color: theme.color.primaryText, border: 'none', padding: '8px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: theme.font.body },
 }
 
 export default Comments

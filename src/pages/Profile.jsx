@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
+import { theme as t } from '../theme'
 
 const ROLES = ['Owner', 'Admin', 'Member']
 
@@ -145,7 +146,7 @@ function Profile() {
 
               <div style={s.footer}>
                 <button style={s.btnBack} onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
-                {saved && <span style={s.savedText}>Saved</span>}
+                {saved && <span style={s.savedText}>✓ Saved</span>}
                 <button style={s.btnSave} onClick={handleSave} disabled={saving || !fullName.trim()}>
                   {saving ? 'Saving...' : 'Save changes'}
                 </button>
@@ -178,46 +179,46 @@ function Profile() {
 const css = [
 '.avatar-click-wrap { position: relative; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }',
 '.avatar-click-wrap:hover { transform: scale(1.04); }',
-'.avatar-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease; border-radius: 50%; }',
+'.avatar-overlay { position: absolute; inset: 0; background: rgba(30,34,51,0.55); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease; border-radius: 50%; }',
 '.avatar-click-wrap:hover .avatar-overlay { opacity: 1; }',
 '.avatar-upload-btn { transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease; }',
-'.avatar-upload-btn:hover { background: #333333; border-color: #444; transform: translateY(-1px); }',
+`.avatar-upload-btn:hover { background: ${t.color.bg}; border-color: ${t.color.accent}; transform: translateY(-1px); }`,
 '.avatar-upload-btn:active { transform: translateY(0); }',
 '@media (max-width: 900px) { .profile-body-row { flex-direction: column !important; } }',
 ].join(' ')
 
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: t.color.bg, color: t.color.ink, fontFamily: t.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  loadingText: { padding: '28px', color: '#555', fontSize: '14px' },
-  topbar: { padding: '20px 28px', borderBottom: '1px solid #1a1a1a' },
-  back: { fontSize: '12px', color: '#555', cursor: 'pointer', marginBottom: '6px' },
-  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  pageSub: { fontSize: '13px', color: '#555' },
-  content: { flex: 1, overflowY: 'auto', padding: '28px' },
+  loadingText: { padding: '28px', color: t.color.muted, fontSize: '14px' },
+  topbar: { padding: '28px 40px 20px' },
+  back: { fontSize: '13px', color: t.color.muted, cursor: 'pointer', marginBottom: '10px' },
+  pageTitle: { fontFamily: t.font.display, fontSize: '28px', fontWeight: '700', color: t.color.ink, marginBottom: '4px' },
+  pageSub: { fontSize: '14px', color: t.color.muted },
+  content: { flex: 1, overflowY: 'auto', padding: '8px 40px 40px' },
   pageBody: { display: 'flex', gap: '20px', alignItems: 'flex-start', maxWidth: '960px' },
-  card: { background: '#161616', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '28px', flex: '1 1 580px', minWidth: 0 },
+  card: { background: t.color.surface, border: `1px solid ${t.color.border}`, borderRadius: t.radius.lg, padding: '28px', flex: '1 1 580px', minWidth: 0 },
   avatarRow: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '28px' },
-  avatarWrap: { width: '88px', height: '88px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#1e1e1e', border: '2px solid #2a2a2a' },
+  avatarWrap: { width: '88px', height: '88px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: t.color.bg, border: `2px solid ${t.color.border}` },
   avatarImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  avatarFallback: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#241c3a', color: '#a78bfa', fontSize: '26px', fontWeight: '700' },
-  uploadBtn: { background: '#2a2a2a', color: '#ccc', border: '1px solid #333', padding: '8px 14px', borderRadius: '7px', fontSize: '12px', cursor: 'pointer' },
-  avatarHint: { fontSize: '11px', color: '#555', marginTop: '6px' },
+  avatarFallback: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(176,141,87,0.18)', color: t.color.accent, fontSize: '26px', fontWeight: '700', fontFamily: t.font.display },
+  uploadBtn: { background: t.color.bg, color: t.color.ink, border: `1px solid ${t.color.border}`, padding: '9px 16px', borderRadius: t.radius.sm, fontSize: '12px', fontWeight: '600', fontFamily: t.font.body, cursor: 'pointer' },
+  avatarHint: { fontSize: '11px', color: t.color.muted, marginTop: '6px' },
   fieldRow: { display: 'flex', gap: '16px' },
   field: { marginBottom: '18px', flex: 1, minWidth: 0 },
-  label: { display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '11px 14px', background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' },
-  readonlyValue: { padding: '11px 14px', background: '#161616', border: '1px solid #222', borderRadius: '8px', color: '#666', fontSize: '14px' },
-  errorBox: { fontSize: '12px', color: '#f87171', background: '#2a1414', border: '1px solid #3a1f1f', borderRadius: '8px', padding: '10px 12px', marginBottom: '18px' },
+  label: { display: 'block', fontSize: '14px', color: t.color.ink, marginBottom: '8px', fontWeight: '600' },
+  input: { width: '100%', padding: '11px 14px', background: t.color.surface, border: `1px solid ${t.color.border}`, borderRadius: t.radius.sm, color: t.color.ink, fontSize: '14px', fontFamily: t.font.body, outline: 'none', boxSizing: 'border-box' },
+  readonlyValue: { padding: '11px 14px', background: t.color.bg, border: `1px solid ${t.color.border}`, borderRadius: t.radius.sm, color: t.color.muted, fontSize: '14px' },
+  errorBox: { fontSize: '13px', color: t.color.danger, background: t.color.dangerBg, border: `1px solid ${t.color.dangerBorder}`, borderRadius: t.radius.sm, padding: '10px 14px', marginBottom: '18px' },
   footer: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' },
-  btnBack: { background: 'transparent', color: '#888', border: '1px solid #2a2a2a', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginRight: 'auto' },
-  savedText: { fontSize: '12px', color: '#4ade80' },
-  btnSave: { background: '#a78bfa', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+  btnBack: { background: 'transparent', color: t.color.muted, border: `1px solid ${t.color.border}`, padding: '10px 18px', borderRadius: t.radius.sm, fontSize: '13px', fontWeight: '600', fontFamily: t.font.body, cursor: 'pointer', marginRight: 'auto' },
+  savedText: { fontSize: '13px', color: '#5B8C5A', fontWeight: '700' },
+  btnSave: { background: t.color.primary, color: t.color.primaryText, border: 'none', padding: '10px 20px', borderRadius: t.radius.sm, fontSize: '13px', fontWeight: '600', fontFamily: t.font.body, cursor: 'pointer' },
   sidebarCol: { flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 },
-  statCard: { background: '#161616', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '18px 20px' },
-  statValue: { fontSize: '24px', fontWeight: '700', color: '#fff', marginBottom: '4px' },
-  statValueSmall: { fontSize: '16px', fontWeight: '600', color: '#a78bfa', marginBottom: '4px' },
-  statLabel: { fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  statCard: { background: t.color.surface, border: `1px solid ${t.color.border}`, borderRadius: t.radius.md, padding: '18px 20px' },
+  statValue: { fontFamily: t.font.display, fontSize: '26px', fontWeight: '700', color: t.color.ink, marginBottom: '4px' },
+  statValueSmall: { fontSize: '16px', fontWeight: '700', color: t.color.accent, marginBottom: '4px' },
+  statLabel: { fontSize: '11px', color: t.color.muted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600' },
 }
 
 export default Profile

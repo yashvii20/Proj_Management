@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
 import Comments from '../components/Comments'
+import { theme } from '../theme'
 
 function MoodBoard() {
   const [items, setItems] = useState([])
@@ -176,7 +177,7 @@ function MoodBoard() {
 
   const allCategories = categories
   const statusLabel = { draft: 'Draft', final: 'Final', review: 'Needs review' }
-  const statusColor = { draft: '#888', final: '#4ade80', review: '#f59e0b' }
+  const statusColor = { draft: theme.color.muted, final: theme.color.primary, review: theme.color.accent }
 
   const currentAttachment = attachments[carouselIndex]
 
@@ -202,7 +203,7 @@ function MoodBoard() {
       <div style={s.main}>
         <div style={s.topbar}>
           <div>
-            <div style={s.pageTitle}>Mood Board</div>
+            <div style={s.pageTitle}>Mood board</div>
             <div style={s.pageSub}>{filtered.length} items</div>
           </div>
           <button style={s.btnNew} onClick={() => setShowModal(true)}>+ Add item</button>
@@ -230,17 +231,17 @@ function MoodBoard() {
           {allCategories.map(c => (
             <div key={c.id} style={{ ...s.catChip, ...(selectedCategory === c.id ? s.catChipActive : {}), display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setSelectedCategory(c.id)}>
               <span>{c.name}</span>
-              <span style={{ ...s.catDelete, color: selectedCategory === c.id ? '#a78bfa' : '#555' }} onClick={async (e) => { e.stopPropagation(); if (window.confirm('Delete category "' + c.name + '"? Items in this category will become uncategorized.')) { await supabase.from('moodboard_categories').delete().eq('id', c.id); fetchCategories(); fetchItems() } }}>x</span>
+              <span style={{ ...s.catDelete, color: selectedCategory === c.id ? theme.color.accent : theme.color.muted }} onClick={async (e) => { e.stopPropagation(); if (window.confirm('Delete category "' + c.name + '"? Items in this category will become uncategorized.')) { await supabase.from('moodboard_categories').delete().eq('id', c.id); fetchCategories(); fetchItems() } }}>x</span>
             </div>
           ))}
         </div>
 
         <div style={s.content}>
-          {loading && <div style={s.empty}>Loading...</div>}
+          {loading && <div style={s.empty}>Loading…</div>}
           {!loading && filtered.length === 0 && (
             <div style={s.emptyState}>
               <div style={s.emptyTitle}>No items yet</div>
-              <div style={s.emptySub}>Add images, PDFs, or links to get started</div>
+              <div style={s.emptySub}>Add images, PDFs, or links to get started.</div>
               <button style={s.btnNew} onClick={() => setShowModal(true)}>+ Add item</button>
             </div>
           )}
@@ -264,7 +265,7 @@ function MoodBoard() {
                     </>
                   ) : (
                     <>
-                      <div style={{ ...s.cardImg, background: firstAttach ? '#111' : '#1a1a2e' }}>
+                      <div style={{ ...s.cardImg, background: firstAttach ? theme.color.bg : theme.color.bg }}>
                         {firstAttach && firstAttach.image_url && <img src={firstAttach.image_url} alt={item.title} style={s.img} onError={e => { e.target.style.display = 'none' }} />}
                         {(item.moodboard_attachments || []).length > 1 && <div style={s.imgCount}>+{(item.moodboard_attachments || []).length - 1}</div>}
                       </div>
@@ -319,13 +320,13 @@ function MoodBoard() {
                 <label style={s.label}>File</label>
                 <div style={s.uploadRow}>
                   <input style={{ ...s.input, flex: 1 }} placeholder='Paste image, PDF, or link URL' value={newFileUrl} onChange={e => { setNewFileUrl(e.target.value); setNewFileType('link') }} />
-                  <button type='button' style={s.uploadBtn} onClick={() => fileInputRef.current.click()}>{uploading ? 'Uploading...' : 'Upload'}</button>
+                  <button type='button' style={s.uploadBtn} onClick={() => fileInputRef.current.click()}>{uploading ? 'Uploading…' : 'Upload'}</button>
                   <input ref={fileInputRef} type='file' accept='*/*' style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFileUpload(e.target.files[0])} />
                 </div>
                 {newFileUrl && newFileType === 'image' && <img src={newFileUrl} alt='preview' style={s.preview} onError={e => { e.target.style.display = 'none' }} />}
                 {newFileUrl && newFileType === 'pdf' && <div style={s.pdfPreview}>PDF file attached</div>}
               </div>
-              <div style={s.field}><label style={s.label}>Description (optional)</label><textarea style={{ ...s.input, height: '60px', resize: 'vertical' }} placeholder='Add context or notes...' value={newDescription} onChange={e => setNewDescription(e.target.value)} /></div>
+              <div style={s.field}><label style={s.label}>Description (optional)</label><textarea style={{ ...s.input, height: '60px', resize: 'vertical' }} placeholder='Add context or notes…' value={newDescription} onChange={e => setNewDescription(e.target.value)} /></div>
               <div style={s.field}><label style={s.label}>Tags (optional, comma separated)</label><input style={s.input} placeholder='exterior, v2, urgent' value={newTags} onChange={e => setNewTags(e.target.value)} /></div>
               <div style={s.field}>
                 <label style={s.label}>Status</label>
@@ -337,7 +338,7 @@ function MoodBoard() {
               </div>
               <div style={s.modalFooter}>
                 <button type='button' style={s.btnCancel} onClick={() => setShowModal(false)}>Cancel</button>
-                <button type='submit' style={s.btnNew} disabled={saving}>{saving ? 'Adding...' : 'Add item'}</button>
+                <button type='submit' style={s.btnNew} disabled={saving}>{saving ? 'Adding…' : 'Add item'}</button>
               </div>
             </form>
           </div>
@@ -389,9 +390,31 @@ function MoodBoard() {
                   <div style={s.detailExtra}>
                     {currentAttachment.description && <div style={s.descText}>{currentAttachment.description}</div>}
                     <div style={s.metaRow}>
-                      <span style={{ ...s.statusTag, color: statusColor[currentAttachment.status || 'draft'], borderColor: (statusColor[currentAttachment.status || 'draft']) + '44' }}>
-                        {statusLabel[currentAttachment.status || 'draft']}
-                      </span>
+                      <select
+                        style={{
+                          background: theme.color.surface,
+                          color: statusColor[currentAttachment.status || 'draft'],
+                          border: `1.5px solid ${statusColor[currentAttachment.status || 'draft']}`,
+                          borderRadius: '999px',
+                          padding: '3px 10px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          fontFamily: theme.font.body,
+                        }}
+                        value={currentAttachment.status || 'draft'}
+                        onChange={async (e) => {
+                          const newStatus = e.target.value
+                          await supabase.from('moodboard_attachments').update({ status: newStatus }).eq('id', currentAttachment.id)
+                          setAttachments(prev => prev.map(a => a.id === currentAttachment.id ? { ...a, status: newStatus } : a))
+                          fetchItems()
+                        }}
+                      >
+                        <option value='draft'>Draft</option>
+                        <option value='review'>Needs review</option>
+                        <option value='final'>Final</option>
+                      </select>
                       {currentAttachment.tags && currentAttachment.tags.map((tag, i) => <span key={i} style={s.tagPill}>{tag}</span>)}
                     </div>
                   </div>
@@ -428,96 +451,96 @@ function MoodBoard() {
 }
 
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: theme.color.bg, color: theme.color.ink, fontFamily: theme.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #1a1a1a' },
-  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  pageSub: { fontSize: '13px', color: '#555' },
-  btnNew: { background: '#a78bfa', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
-  filterBar: { display: 'flex', gap: '16px', padding: '12px 28px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' },
+  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 28px', borderBottom: `1px solid ${theme.color.border}` },
+  pageTitle: { fontFamily: theme.font.display, fontSize: '22px', fontWeight: 600, color: theme.color.ink, marginBottom: '4px' },
+  pageSub: { fontSize: '13px', color: theme.color.muted },
+  btnNew: { background: theme.color.primary, color: theme.color.primaryText, border: 'none', padding: '9px 18px', borderRadius: theme.radius.sm, fontSize: '13px', fontWeight: 600, cursor: 'pointer' },
+  filterBar: { display: 'flex', gap: '18px', padding: '14px 28px', borderBottom: `1px solid ${theme.color.border}`, flexWrap: 'wrap' },
   filterGroup: { display: 'flex', alignItems: 'center', gap: '8px' },
-  filterLabel: { fontSize: '11px', color: '#555' },
-  filterSelect: { padding: '6px 10px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#aaa', fontSize: '12px' },
-  catRow: { display: 'flex', gap: '8px', padding: '12px 28px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap' },
-  catChip: { padding: '5px 14px', borderRadius: '20px', fontSize: '12px', color: '#555', cursor: 'pointer', border: '1px solid #1f1f1f', background: '#141414' },
-  catChipActive: { border: '1px solid #a78bfa', color: '#a78bfa', background: '#241c3a', fontWeight: '600', boxShadow: '0 0 0 1px #a78bfa33' },
-  catDelete: { fontSize: '10px', color: '#666', cursor: 'pointer', lineHeight: 1, padding: '0 2px' },
-  content: { flex: 1, overflowY: 'auto', padding: '20px 28px' },
-  empty: { color: '#555', fontSize: '14px' },
+  filterLabel: { fontSize: '11.5px', color: theme.color.muted },
+  filterSelect: { padding: '7px 11px', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, color: theme.color.muted, fontSize: '12.5px', cursor: 'pointer' },
+  catRow: { display: 'flex', gap: '8px', padding: '14px 28px', borderBottom: `1px solid ${theme.color.border}`, flexWrap: 'wrap' },
+  catChip: { padding: '6px 14px', borderRadius: theme.radius.lg, fontSize: '12.5px', color: theme.color.muted, cursor: 'pointer', border: `1px solid ${theme.color.border}`, background: theme.color.surface },
+  catChipActive: { border: `1px solid ${theme.color.accent}`, color: theme.color.accent, background: theme.color.bg, fontWeight: 600 },
+  catDelete: { fontSize: '10px', cursor: 'pointer', lineHeight: 1, padding: '0 2px' },
+  content: { flex: 1, overflowY: 'auto', padding: '22px 28px' },
+  empty: { color: theme.color.muted, fontSize: '14px' },
   emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '10px' },
-  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  emptySub: { fontSize: '13px', color: '#555', marginBottom: '8px' },
+  emptyTitle: { fontFamily: theme.font.display, fontSize: '17px', fontWeight: 600, color: theme.color.ink },
+  emptySub: { fontSize: '13px', color: theme.color.muted, marginBottom: '8px' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' },
-  card: { background: '#161616', border: '1px solid #1e1e1e', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' },
+  card: { background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md, overflow: 'hidden', cursor: 'pointer' },
   cardImg: { height: '140px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   img: { width: '100%', height: '100%', objectFit: 'cover' },
-  imgCount: { position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '10px' },
-  cardBody: { padding: '10px 12px' },
-  cardTitle: { fontSize: '13px', fontWeight: '500', color: '#ddd', marginBottom: '6px' },
-  cardMeta: { display: 'flex', gap: '6px', marginBottom: '6px' },
-  catTag: { fontSize: '10.5px', color: '#a78bfa', background: '#241c3a', padding: '2px 8px', borderRadius: '4px' },
-  catSelect: { background: '#241c3a', color: '#a78bfa', border: '1px solid #352a52', borderRadius: '6px', fontSize: '11px', padding: '3px 8px', cursor: 'pointer', outline: 'none' },
-  projSelect: { background: '#1a2e1a', color: '#4ade80', border: '1px solid #1b3a2d', borderRadius: '6px', fontSize: '11px', padding: '3px 8px', cursor: 'pointer', outline: 'none' },
+  imgCount: { position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(30,34,51,0.72)', color: theme.color.primaryText, fontSize: '11px', padding: '2px 8px', borderRadius: theme.radius.lg },
+  cardBody: { padding: '11px 13px' },
+  cardTitle: { fontSize: '13px', fontWeight: 500, color: theme.color.ink, marginBottom: '7px' },
+  cardMeta: { display: 'flex', gap: '6px', marginBottom: '7px' },
+  catTag: { fontSize: '10.5px', color: theme.color.accent, background: theme.color.bg, padding: '2px 8px', borderRadius: theme.radius.sm },
+  catSelect: { background: theme.color.bg, color: theme.color.accent, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, fontSize: '11px', padding: '3px 8px', cursor: 'pointer', outline: 'none' },
+  projSelect: { background: theme.color.bg, color: theme.color.ink, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, fontSize: '11px', padding: '3px 8px', cursor: 'pointer', outline: 'none' },
   contributors: { display: 'flex', gap: '4px' },
-  contributorBadge: { width: '18px', height: '18px', borderRadius: '50%', background: '#2d2d2d', color: '#a78bfa', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  fileRow: { display: 'flex', alignItems: 'center', gap: '12px', background: '#141414', border: '1px solid #1f1f1f', borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', gridColumn: '1 / -1' },
-  fileIcon: { width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', fontWeight: '700' },
-  fileIconPdf: { background: '#2a1414', color: '#e88' },
-  fileIconWord: { background: '#132a3f', color: '#7ec5f0' },
-  fileIconExcel: { background: '#132a1c', color: '#7ee8a3' },
-  fileIconPpt: { background: '#2a1a14', color: '#f0a97e' },
-  fileIconLink: { background: '#16202a', color: '#7ec5e8' },
+  contributorBadge: { width: '18px', height: '18px', borderRadius: '50%', background: theme.color.bg, color: theme.color.accent, fontSize: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  fileRow: { display: 'flex', alignItems: 'center', gap: '12px', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md, padding: '13px 15px', cursor: 'pointer', gridColumn: '1 / -1' },
+  fileIcon: { width: '36px', height: '36px', borderRadius: theme.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', fontWeight: 700 },
+  fileIconPdf: { background: theme.color.dangerBg, color: theme.color.danger },
+  fileIconWord: { background: theme.color.bg, color: theme.color.primary },
+  fileIconExcel: { background: theme.color.bg, color: theme.color.accent },
+  fileIconPpt: { background: theme.color.bg, color: theme.color.accent },
+  fileIconLink: { background: theme.color.bg, color: theme.color.muted },
   fileInfo: { flex: 1, minWidth: 0 },
-  fileName: { fontSize: '13px', color: '#ddd', marginBottom: '2px' },
-  fileMeta: { fontSize: '11px', color: '#555' },
-  fileAvatar: { width: '24px', height: '24px', borderRadius: '50%', background: '#241c3a', color: '#a78bfa', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
-  modal: { background: '#161616', border: '1px solid #2a2a2a', borderRadius: '14px', padding: '24px', width: '100%', maxWidth: '460px', maxHeight: '90vh', overflowY: 'auto' },
-  detailModal: { background: '#161616', border: '1px solid #222', borderRadius: '16px', width: '100%', maxWidth: '860px', maxHeight: '88vh', display: 'flex', overflow: 'hidden' },
-  detailLeft: { flex: 1, background: '#0a0a0a', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' },
+  fileName: { fontSize: '13px', color: theme.color.ink, marginBottom: '3px' },
+  fileMeta: { fontSize: '11.5px', color: theme.color.muted },
+  fileAvatar: { width: '24px', height: '24px', borderRadius: '50%', background: theme.color.bg, color: theme.color.accent, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(30,34,51,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px', boxSizing: 'border-box' },
+  modal: { background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.lg, padding: '26px', width: '100%', maxWidth: '460px', maxHeight: '90vh', overflowY: 'auto' },
+  detailModal: { background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.lg, width: '100%', maxWidth: '860px', maxHeight: '88vh', display: 'flex', overflow: 'hidden' },
+  detailLeft: { flex: 1, background: theme.color.sidebarBg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' },
   detailImg: { width: '100%', height: '100%', objectFit: 'contain' },
   linkPlaceholder: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
-  linkPlaceholderText: { fontSize: '13px', color: '#555' },
-  linkOpenBtn: { background: '#a78bfa', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none' },
-  navRow: { position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.6)', padding: '5px 12px', borderRadius: '20px' },
-  navBtn: { background: 'transparent', border: 'none', color: '#888', fontSize: '12px', cursor: 'pointer' },
-  navCount: { fontSize: '12px', color: '#555' },
-  detailRight: { width: '300px', display: 'flex', flexDirection: 'column', borderLeft: '1px solid #1e1e1e', overflowY: 'auto' },
-  detailRightTop: { padding: '16px', borderBottom: '1px solid #1e1e1e', position: 'relative' },
-  detailTitle: { fontSize: '15px', fontWeight: '600', color: '#fff', marginBottom: '8px', paddingRight: '30px' },
-  detailMeta: { display: 'flex', gap: '8px', marginBottom: '10px' },
-  attachCount: { fontSize: '11px', color: '#555' },
+  linkPlaceholderText: { fontSize: '13px', color: theme.color.sidebarMuted },
+  linkOpenBtn: { background: theme.color.accent, color: theme.color.primaryText, padding: '8px 16px', borderRadius: theme.radius.sm, fontSize: '13px', textDecoration: 'none' },
+  navRow: { position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(232,229,221,0.12)', padding: '5px 12px', borderRadius: theme.radius.lg },
+  navBtn: { background: 'transparent', border: 'none', color: theme.color.sidebarText, fontSize: '12px', cursor: 'pointer' },
+  navCount: { fontSize: '12px', color: theme.color.sidebarMuted },
+  detailRight: { width: '300px', display: 'flex', flexDirection: 'column', borderLeft: `1px solid ${theme.color.border}`, overflowY: 'auto' },
+  detailRightTop: { padding: '16px', borderBottom: `1px solid ${theme.color.border}`, position: 'relative' },
+  detailTitle: { fontFamily: theme.font.display, fontSize: '15px', fontWeight: 600, color: theme.color.ink, marginBottom: '9px', paddingRight: '30px' },
+  detailMeta: { display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' },
+  attachCount: { fontSize: '11px', color: theme.color.muted },
   detailExtra: { marginTop: '6px' },
-  descText: { fontSize: '12px', color: '#999', lineHeight: '1.5', marginBottom: '8px' },
+  descText: { fontSize: '12px', color: theme.color.muted, lineHeight: '1.5', marginBottom: '8px' },
   metaRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
-  statusTag: { fontSize: '10.5px', padding: '2px 9px', borderRadius: '20px', border: '1px solid' },
-  tagPill: { fontSize: '10.5px', color: '#888', background: '#1e1e1e', padding: '2px 9px', borderRadius: '20px' },
-  closeBtnFixed: { position: 'absolute', top: '12px', right: '12px', background: '#2a2a2a', color: '#888', border: '1px solid #333', width: '24px', height: '24px', borderRadius: '50%', fontSize: '12px', cursor: 'pointer' },
-  refList: { padding: '10px', borderBottom: '1px solid #1e1e1e' },
-  refListLabel: { fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', padding: '0 4px' },
-  refRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '7px', cursor: 'pointer', border: '1px solid transparent' },
-  refRowActive: { background: '#1e1e1e', border: '1px solid #2a2a2a' },
-  refThumb: { width: '34px', height: '34px', borderRadius: '5px', overflow: 'hidden', background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statusTag: { fontSize: '10.5px', padding: '2px 9px', borderRadius: theme.radius.lg, border: '1px solid', fontWeight: 500 },
+  tagPill: { fontSize: '10.5px', color: theme.color.muted, background: theme.color.bg, padding: '2px 9px', borderRadius: theme.radius.lg },
+  closeBtnFixed: { position: 'absolute', top: '12px', right: '12px', background: theme.color.surface, color: theme.color.muted, border: `1px solid ${theme.color.border}`, width: '24px', height: '24px', borderRadius: '50%', fontSize: '12px', cursor: 'pointer' },
+  refList: { padding: '10px', borderBottom: `1px solid ${theme.color.border}` },
+  refListLabel: { fontSize: '10px', color: theme.color.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', padding: '0 4px' },
+  refRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: theme.radius.sm, cursor: 'pointer', border: '1px solid transparent' },
+  refRowActive: { background: theme.color.bg, border: `1px solid ${theme.color.border}` },
+  refThumb: { width: '34px', height: '34px', borderRadius: theme.radius.sm, overflow: 'hidden', background: theme.color.bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   refThumbImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  refThumbLink: { fontSize: '9px', color: '#555' },
+  refThumbLink: { fontSize: '9px', color: theme.color.muted },
   refInfo: { flex: 1, minWidth: 0 },
-  refName: { fontSize: '12px', color: '#ccc' },
-  refDel: { color: '#444', fontSize: '12px', cursor: 'pointer', padding: '0 4px' },
-  commentsWrap: { padding: '12px', borderBottom: '1px solid #1e1e1e' },
+  refName: { fontSize: '12px', color: theme.color.ink },
+  refDel: { color: theme.color.muted, fontSize: '12px', cursor: 'pointer', padding: '0 4px' },
+  commentsWrap: { padding: '12px', borderBottom: `1px solid ${theme.color.border}` },
   addRef: { padding: '12px' },
-  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' },
-  modalTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  closeBtn: { color: '#555', cursor: 'pointer', fontSize: '14px' },
+  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' },
+  modalTitle: { fontFamily: theme.font.display, fontSize: '17px', fontWeight: 600, color: theme.color.ink },
+  closeBtn: { color: theme.color.muted, cursor: 'pointer', fontSize: '14px' },
   field: { marginBottom: '16px' },
-  label: { display: 'block', fontSize: '12px', color: '#888', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '10px 14px', background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#fff', fontSize: '14px', outline: 'none' },
+  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: theme.color.ink, marginBottom: '7px' },
+  input: { width: '100%', padding: '10px 14px', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, color: theme.color.ink, fontSize: '14px', outline: 'none', boxSizing: 'border-box' },
   uploadRow: { display: 'flex', gap: '6px', alignItems: 'center' },
-  uploadBtn: { background: '#2a2a2a', color: '#ccc', border: '1px solid #333', padding: '8px 12px', borderRadius: '7px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' },
-  preview: { width: '100%', height: '110px', objectFit: 'cover', borderRadius: '6px', marginTop: '8px' },
-  pdfPreview: { fontSize: '12px', color: '#888', background: '#1a1a1a', padding: '10px', borderRadius: '6px', marginTop: '8px' },
+  uploadBtn: { background: theme.color.surface, color: theme.color.ink, border: `1px solid ${theme.color.border}`, padding: '9px 13px', borderRadius: theme.radius.sm, fontSize: '12.5px', cursor: 'pointer', whiteSpace: 'nowrap' },
+  preview: { width: '100%', height: '110px', objectFit: 'cover', borderRadius: theme.radius.sm, marginTop: '8px' },
+  pdfPreview: { fontSize: '12px', color: theme.color.muted, background: theme.color.bg, padding: '10px', borderRadius: theme.radius.sm, marginTop: '8px' },
   modalFooter: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' },
-  btnCancel: { background: 'transparent', color: '#666', border: '1px solid #2a2a2a', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
-  btnDelete: { background: 'transparent', color: '#f87171', border: '1px solid #3a1f1f', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', width: '100%' },
+  btnCancel: { background: 'transparent', color: theme.color.muted, border: `1px solid ${theme.color.border}`, padding: '9px 16px', borderRadius: theme.radius.sm, fontSize: '13px', cursor: 'pointer' },
+  btnDelete: { background: theme.color.dangerBg, color: theme.color.danger, border: `1px solid ${theme.color.dangerBorder}`, padding: '9px 14px', borderRadius: theme.radius.sm, fontSize: '12.5px', fontWeight: 500, cursor: 'pointer', width: '100%' },
 }
 
 export default MoodBoard

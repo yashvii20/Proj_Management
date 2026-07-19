@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
+import { theme } from '../theme'
 
 function Tasks() {
   const navigate = useNavigate()
@@ -51,7 +52,7 @@ function Tasks() {
   const getProfileName = (userId) => profiles.find(p => p.id === userId)?.full_name || 'Unassigned'
 
   const statusLabel = { todo: 'To do', inprogress: 'In progress', done: 'Done' }
-  const statusColor = { todo: '#444', inprogress: '#a78bfa', done: '#4ade80' }
+  const statusColor = { todo: theme.color.muted, inprogress: theme.color.accent, done: theme.color.primary }
 
   const filtered = tasks.filter(t => {
     if (scope === 'mine' && t.assigned_to !== currentUser?.id) return false
@@ -63,19 +64,20 @@ function Tasks() {
 
   return (
     <div style={s.app} className='app-shell'>
+      <style>{styleTag}</style>
       <Sidebar />
       <div style={s.main}>
         <div style={s.topbar}>
           <div>
-            <div style={s.pageTitle}>All Tasks</div>
+            <div style={s.pageTitle}>All tasks</div>
             <div style={s.pageSub}>{filtered.length} tasks across all projects</div>
           </div>
         </div>
 
-        <div style={s.filterBar}>
-          <div style={s.filterGroup}>
-            <div style={{ ...s.scopeBtn, ...(scope === 'all' ? s.scopeActive : {}) }} onClick={() => setScope('all')}>All tasks</div>
-            <div style={{ ...s.scopeBtn, ...(scope === 'mine' ? s.scopeActive : {}) }} onClick={() => setScope('mine')}>My tasks</div>
+        <div style={s.scopeBar}>
+          <div style={s.scopeToggle}>
+            <div className='scope-btn' style={{ ...s.scopeBtn, ...(scope === 'all' ? s.scopeActive : {}) }} onClick={() => setScope('all')}>All tasks</div>
+            <div className='scope-btn' style={{ ...s.scopeBtn, ...(scope === 'mine' ? s.scopeActive : {}) }} onClick={() => setScope('mine')}>My tasks</div>
           </div>
         </div>
 
@@ -97,16 +99,16 @@ function Tasks() {
         </div>
 
         <div style={s.content}>
-          {loading && <div style={s.empty}>Loading...</div>}
+          {loading && <div style={s.empty}>Loading…</div>}
           {!loading && filtered.length === 0 && (
             <div style={s.emptyState}>
               <div style={s.emptyTitle}>No tasks found</div>
-              <div style={s.emptySub}>Try adjusting your filters, or add tasks inside a project</div>
+              <div style={s.emptySub}>Try adjusting your filters, or add tasks inside a project.</div>
             </div>
           )}
           <div style={s.list}>
             {filtered.map(task => (
-              <div key={task.id} style={s.row} onClick={() => navigate('/projects/' + task.project_id)}>
+              <div key={task.id} className='task-row' style={s.row} onClick={() => navigate('/projects/' + task.project_id)}>
                 <div
                   style={{ ...s.check, ...(task.status === 'done' ? s.checkDone : {}) }}
                   onClick={e => { e.stopPropagation(); updateStatus(task.id, task.status === 'done' ? 'todo' : 'done') }}
@@ -119,7 +121,7 @@ function Tasks() {
                   </div>
                 </div>
                 {task.assigned_to && <div style={s.assignee} title={getProfileName(task.assigned_to)}>{getInitials(getProfileName(task.assigned_to))}</div>}
-                <div style={{ ...s.statusBadge, color: statusColor[task.status], borderColor: statusColor[task.status] + '44' }}>{statusLabel[task.status]}</div>
+                <div style={{ ...s.statusBadge, color: statusColor[task.status], borderColor: statusColor[task.status] }}>{statusLabel[task.status]}</div>
               </div>
             ))}
           </div>
@@ -129,34 +131,41 @@ function Tasks() {
   )
 }
 
+const styleTag = `
+  .task-row { transition: border-color 0.15s ease; }
+  .task-row:hover { border-color: ${theme.color.accent} !important; }
+  .scope-btn { transition: background 0.15s ease, color 0.15s ease; }
+`
+
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: theme.color.bg, color: theme.color.ink, fontFamily: theme.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #1a1a1a' },
-  pageTitle: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  pageSub: { fontSize: '13px', color: '#555' },
-  filterBar: { display: 'flex', gap: '8px', padding: '10px 28px', borderBottom: '1px solid #1a1a1a', flexWrap: 'wrap', alignItems: 'center' },
-  filterGroup: { display: 'flex', gap: '8px' },
-  scopeBtn: { padding: '5px 14px', borderRadius: '20px', fontSize: '12px', color: '#555', cursor: 'pointer', border: '1px solid transparent' },
-  scopeActive: { border: '1px solid #2a2a2a', color: '#fff', background: '#1e1e1e' },
-  filterSelect: { padding: '6px 12px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#aaa', fontSize: '12px', cursor: 'pointer' },
-  content: { flex: 1, overflowY: 'auto', padding: '20px 28px' },
-  empty: { color: '#555', fontSize: '14px' },
-  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '8px' },
-  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  emptySub: { fontSize: '13px', color: '#555' },
+  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 28px', borderBottom: `1px solid ${theme.color.border}` },
+  pageTitle: { fontFamily: theme.font.display, fontSize: '22px', fontWeight: 600, color: theme.color.ink, marginBottom: '4px' },
+  pageSub: { fontSize: '13px', color: theme.color.muted },
+  scopeBar: { padding: '18px 28px 0' },
+  scopeToggle: { display: 'inline-flex', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.lg, padding: '3px' },
+  scopeBtn: { padding: '8px 18px', borderRadius: theme.radius.md, fontSize: '13px', fontWeight: 500, color: theme.color.muted, cursor: 'pointer' },
+  scopeActive: { background: theme.color.primary, color: theme.color.primaryText },
+  filterBar: { display: 'flex', gap: '10px', padding: '14px 28px', flexWrap: 'wrap', alignItems: 'center' },
+  filterSelect: { padding: '9px 13px', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, color: theme.color.muted, fontSize: '13px', cursor: 'pointer' },
+  content: { flex: 1, overflowY: 'auto', padding: '0 28px 28px' },
+  empty: { color: theme.color.muted, fontSize: '14px' },
+  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '6px' },
+  emptyTitle: { fontFamily: theme.font.display, fontSize: '17px', fontWeight: 600, color: theme.color.ink },
+  emptySub: { fontSize: '13px', color: theme.color.muted },
   list: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  row: { display: 'flex', alignItems: 'center', gap: '12px', background: '#161616', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '12px 16px', cursor: 'pointer' },
-  check: { width: '18px', height: '18px', borderRadius: '5px', border: '1.5px solid #333', flexShrink: 0, cursor: 'pointer' },
-  checkDone: { background: '#a78bfa', borderColor: '#a78bfa' },
+  row: { display: 'flex', alignItems: 'center', gap: '14px', background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md, padding: '14px 18px', cursor: 'pointer' },
+  check: { width: '18px', height: '18px', borderRadius: '4px', border: `1.5px solid ${theme.color.border}`, flexShrink: 0, cursor: 'pointer' },
+  checkDone: { background: theme.color.accent, borderColor: theme.color.accent },
   rowMain: { flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: '13px', color: '#ddd', fontWeight: '500', marginBottom: '4px' },
-  strikethrough: { textDecoration: 'line-through', color: '#444' },
-  rowMeta: { display: 'flex', alignItems: 'center', gap: '8px' },
-  projectTag: { fontSize: '11px', color: '#a78bfa', background: '#2d1f4e', padding: '2px 8px', borderRadius: '4px' },
-  dueTag: { fontSize: '11px', color: '#555' },
-  assignee: { width: '24px', height: '24px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  statusBadge: { fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: '1px solid', flexShrink: 0 },
+  rowTitle: { fontSize: '14.5px', color: theme.color.ink, fontWeight: 600, marginBottom: '6px' },
+  strikethrough: { textDecoration: 'line-through', color: theme.color.muted },
+  rowMeta: { display: 'flex', alignItems: 'center', gap: '10px' },
+  projectTag: { fontSize: '11.5px', fontWeight: 600, color: theme.color.accent, background: theme.color.bg, padding: '3px 10px', borderRadius: theme.radius.sm },
+  dueTag: { fontSize: '12px', color: theme.color.muted },
+  assignee: { width: '26px', height: '26px', borderRadius: '50%', background: theme.color.bg, color: theme.color.accent, fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  statusBadge: { fontSize: '12px', fontWeight: 600, padding: '5px 13px', borderRadius: theme.radius.lg, border: '1px solid', flexShrink: 0 },
 }
 
 export default Tasks

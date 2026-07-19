@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Sidebar from '../components/Sidebar'
+import { theme as t } from '../theme'
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -16,13 +17,13 @@ function Dashboard() {
       if (user) {
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(prof)
-        const [{ count: p }, { count: t }, { count: m }, { count: c }] = await Promise.all([
+        const [{ count: p }, { count: t2 }, { count: m }, { count: c }] = await Promise.all([
           supabase.from('projects').select('*', { count: 'exact', head: true }),
           supabase.from('tasks').select('*', { count: 'exact', head: true }),
           supabase.from('moodboard_items').select('*', { count: 'exact', head: true }),
           supabase.from('comments').select('*', { count: 'exact', head: true }),
         ])
-        setCounts({ projects: p || 0, tasks: t || 0, moodboard: m || 0, comments: c || 0 })
+        setCounts({ projects: p || 0, tasks: t2 || 0, moodboard: m || 0, comments: c || 0 })
         const { data: proj } = await supabase.from('projects').select('*').order('created_at', { ascending: false })
         setProjects(proj || [])
         if (proj && proj.length > 0) {
@@ -38,7 +39,7 @@ function Dashboard() {
     load()
   }, [])
 
-  const colors = ['#a78bfa', '#4ade80', '#f59e0b', '#f87171', '#38bdf8']
+  const colors = [t.color.accent, '#7A8B6F', '#8E7BA0', '#B0745A', '#5E8B8B']
 
   return (
     <div style={s.app} className="app-shell">
@@ -49,16 +50,16 @@ function Dashboard() {
         {/* Desktop topbar */}
         <div style={s.topbar} className="desktop-topbar">
           <div>
-            <div style={s.greeting}>Welcome back, {profile?.full_name?.split(' ')[0] || 'there'} 👋</div>
-            <div style={s.greetingSub}>Here's your team's activity today</div>
+            <div style={s.greeting}>Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}</div>
+            <div style={s.greetingSub}>Here's your team's activity today.</div>
           </div>
           <button style={s.btnNew} onClick={() => navigate('/projects')}>+ New project</button>
         </div>
 
         {/* Mobile hero */}
         <div style={s.mobileHero} className="mobile-hero">
-          <div style={s.mobileGreet}>Welcome, {profile?.full_name?.split(' ')[0] || 'there'} 👋</div>
-          <div style={s.mobileSub}>Here's your team's activity today</div>
+          <div style={s.mobileGreet}>Welcome, {profile?.full_name?.split(' ')[0] || 'there'}</div>
+          <div style={s.mobileSub}>Here's your team's activity today.</div>
           <button style={s.btnNew} onClick={() => navigate('/projects')}>+ New project</button>
         </div>
 
@@ -87,7 +88,7 @@ function Dashboard() {
                 <div key={p.id} style={s.projectRow} onClick={() => navigate('/projects/' + p.id)}>
                   <div style={{ ...s.projDot, background: colors[i % colors.length] }} />
                   <div style={s.projName}>{p.name}</div>
-                  <div style={s.projCount}>{taskCounts[p.id] || 0} tasks</div>
+                  <div style={s.projCount}>{taskCounts[p.id] || 0} task{taskCounts[p.id] === 1 ? '' : 's'}</div>
                   <div style={s.projArrow}>›</div>
                 </div>
               ))}
@@ -121,63 +122,62 @@ const mobileCss = `
 `
 
 const s = {
-  app: { display: 'flex', height: '100vh', background: '#0f0f0f', color: '#fff' },
+  app: { display: 'flex', height: '100vh', background: t.color.bg, color: t.color.ink, fontFamily: t.font.body },
   main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   topbar: {
     alignItems: 'center', justifyContent: 'space-between',
-    padding: '20px 28px', borderBottom: '1px solid #1a1a1a',
+    padding: '32px 40px 20px',
   },
-  greeting: { fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '3px' },
-  greetingSub: { fontSize: '13px', color: '#555' },
+  greeting: { fontFamily: t.font.display, fontSize: '30px', fontWeight: '700', color: t.color.ink, marginBottom: '6px' },
+  greetingSub: { fontSize: '14px', color: t.color.muted },
   mobileHero: {
     flexDirection: 'column', padding: '20px 18px 18px',
-    background: 'linear-gradient(135deg, #141414, #1a1430)',
-    borderBottom: '1px solid #1e1e1e',
+    borderBottom: `1px solid ${t.color.border}`,
   },
-  mobileGreet: { fontSize: '22px', fontWeight: '700', color: '#fff', marginBottom: '4px' },
-  mobileSub: { fontSize: '12px', color: '#888', marginBottom: '16px' },
+  mobileGreet: { fontFamily: t.font.display, fontSize: '22px', fontWeight: '700', color: t.color.ink, marginBottom: '4px' },
+  mobileSub: { fontSize: '12px', color: t.color.muted, marginBottom: '16px' },
   btnNew: {
-    background: '#a78bfa', color: '#fff', border: 'none',
-    padding: '9px 18px', borderRadius: '8px', fontSize: '13px',
-    fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-start',
+    background: t.color.primary, color: t.color.primaryText, border: 'none',
+    padding: '11px 20px', borderRadius: t.radius.sm, fontSize: '13px',
+    fontWeight: '600', fontFamily: t.font.body, cursor: 'pointer', alignSelf: 'flex-start',
   },
-  content: { flex: 1, overflowY: 'auto', padding: '20px 18px' },
+  content: { flex: 1, overflowY: 'auto', padding: '8px 40px 40px' },
   stats: {
     display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '12px', marginBottom: '24px',
+    gap: '16px', marginBottom: '32px',
   },
   statCard: {
-    background: '#161616', border: '1px solid #1e1e1e',
-    borderRadius: '10px', padding: '16px', cursor: 'pointer',
+    background: t.color.surface, border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.md, padding: '20px', cursor: 'pointer',
   },
   statLabel: {
-    fontSize: '10px', color: '#555', marginBottom: '8px',
-    textTransform: 'uppercase', letterSpacing: '0.5px',
+    fontSize: '11px', color: t.color.muted, marginBottom: '14px',
+    textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600',
   },
-  statVal: { fontSize: '24px', fontWeight: '700', color: '#fff' },
-  statSub: { fontSize: '11px', color: '#a78bfa', fontWeight: '400', marginLeft: '6px' },
+  statVal: { fontFamily: t.font.display, fontSize: '32px', fontWeight: '700', color: t.color.ink },
+  statSub: { fontSize: '13px', color: t.color.accent, fontWeight: '600', fontFamily: t.font.body, marginLeft: '8px' },
   projectSection: { marginTop: '4px' },
   sectionTitle: {
-    fontSize: '11px', color: '#555', textTransform: 'uppercase',
-    letterSpacing: '0.5px', marginBottom: '10px', fontWeight: '600',
+    fontSize: '11px', color: t.color.muted, textTransform: 'uppercase',
+    letterSpacing: '0.06em', marginBottom: '12px', fontWeight: '700',
   },
   projectRow: {
-    display: 'flex', alignItems: 'center', gap: '10px',
-    background: '#161616', border: '1px solid #1e1e1e',
-    borderRadius: '9px', padding: '12px 14px',
-    marginBottom: '8px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: '12px',
+    background: t.color.surface, border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.md, padding: '18px 20px',
+    marginBottom: '10px', cursor: 'pointer',
   },
-  projDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
-  projName: { fontSize: '13px', color: '#ddd', fontWeight: '500', flex: 1 },
-  projCount: { fontSize: '11px', color: '#555' },
-  projArrow: { fontSize: '16px', color: '#444' },
+  projDot: { width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0 },
+  projName: { fontSize: '15px', color: t.color.ink, fontWeight: '700', flex: 1 },
+  projCount: { fontSize: '13px', color: t.color.muted },
+  projArrow: { fontSize: '18px', color: t.color.muted },
   emptyState: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', padding: '60px 20px', gap: '10px',
   },
   emptyIcon: { fontSize: '40px', marginBottom: '8px' },
-  emptyTitle: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  emptySub: { fontSize: '13px', color: '#555', marginBottom: '8px' },
+  emptyTitle: { fontFamily: t.font.display, fontSize: '18px', fontWeight: '700', color: t.color.ink },
+  emptySub: { fontSize: '13px', color: t.color.muted, marginBottom: '8px' },
 }
 
 export default Dashboard

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { theme as t } from '../theme'
 
 function Signup() {
   const navigate = useNavigate()
@@ -33,10 +34,12 @@ function Signup() {
   return (
     <div style={s.page}>
       <div style={s.card}>
-        <div style={s.logo}>AC</div>
-        <h1 style={s.title}>Create account</h1>
-        <p style={s.sub}>Join your team on Atelier</p>
+        <div style={s.eyebrow}>Join the studio</div>
+        <h1 style={s.title}>Create your account</h1>
+        <p style={s.sub}>Set up your workspace to get started.</p>
+
         {error && <div style={s.error}>{error}</div>}
+
         <form onSubmit={handleSignup}>
           <div style={s.field}>
             <label style={s.label}>Full name</label>
@@ -50,11 +53,11 @@ function Signup() {
             />
           </div>
           <div style={s.field}>
-            <label style={s.label}>Email</label>
+            <label style={s.label}>Email address</label>
             <input
               style={s.input}
               type="email"
-              placeholder="you@example.com"
+              placeholder="you@studio.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -72,11 +75,12 @@ function Signup() {
             />
           </div>
           <button style={s.btn} type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
+
         <p style={s.footer}>
-          Have an account? <Link to="/login" style={s.link}>Sign in</Link>
+          Already have an account? <Link to="/login" style={s.link}>Sign in</Link>
         </p>
       </div>
     </div>
@@ -89,89 +93,96 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#0f0f0f',
+    background: t.color.bg,
+    fontFamily: t.font.body,
+    padding: '24px',
   },
   card: {
-    background: '#161616',
-    border: '1px solid #222',
-    borderRadius: '16px',
-    padding: '40px',
+    background: t.color.surface,
+    border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.lg,
+    padding: '48px 44px',
     width: '100%',
-    maxWidth: '380px',
+    maxWidth: '440px',
+    boxShadow: '0 1px 2px rgba(30,34,51,0.04)',
   },
-  logo: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    background: '#a78bfa',
-    color: '#fff',
+  eyebrow: {
+    fontSize: '12px',
     fontWeight: '700',
-    fontSize: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '16px',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: t.color.accent,
+    marginBottom: '10px',
   },
   title: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: '4px',
+    fontFamily: t.font.display,
+    fontSize: '30px',
+    fontWeight: '700',
+    color: t.color.ink,
+    marginBottom: '10px',
+    lineHeight: '1.2',
   },
   sub: {
-    fontSize: '13px',
-    color: '#555',
-    marginBottom: '28px',
+    fontSize: '15px',
+    color: t.color.muted,
+    marginBottom: '30px',
   },
   error: {
-    background: '#2a1515',
-    border: '1px solid #3a1f1f',
-    color: '#f87171',
+    background: t.color.dangerBg,
+    border: `1px solid ${t.color.dangerBorder}`,
+    color: t.color.danger,
     padding: '10px 14px',
-    borderRadius: '8px',
+    borderRadius: t.radius.sm,
     fontSize: '13px',
-    marginBottom: '16px',
+    marginBottom: '18px',
   },
   field: {
-    marginBottom: '16px',
+    marginBottom: '20px',
   },
   label: {
     display: 'block',
-    fontSize: '12px',
-    color: '#888',
-    marginBottom: '6px',
-    fontWeight: '500',
+    fontSize: '14px',
+    color: t.color.ink,
+    marginBottom: '8px',
+    fontWeight: '600',
   },
   input: {
     width: '100%',
-    padding: '10px 14px',
-    background: '#1e1e1e',
-    border: '1px solid #2a2a2a',
-    borderRadius: '8px',
-    color: '#fff',
-    fontSize: '14px',
+    padding: '12px 16px',
+    background: t.color.surface,
+    border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.sm,
+    color: t.color.ink,
+    fontSize: '15px',
+    fontFamily: t.font.body,
     outline: 'none',
+    boxSizing: 'border-box',
   },
   btn: {
     width: '100%',
-    padding: '11px',
-    background: '#a78bfa',
-    color: '#fff',
+    padding: '14px',
+    background: t.color.primary,
+    color: t.color.primaryText,
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
+    borderRadius: t.radius.sm,
+    fontSize: '15px',
     fontWeight: '600',
-    marginTop: '8px',
+    fontFamily: t.font.body,
+    marginTop: '6px',
+    cursor: 'pointer',
   },
   footer: {
     textAlign: 'center',
-    marginTop: '20px',
-    fontSize: '13px',
-    color: '#555',
+    marginTop: '28px',
+    fontSize: '14px',
+    color: t.color.muted,
   },
   link: {
-    color: '#a78bfa',
-    fontWeight: '500',
+    color: t.color.ink,
+    fontWeight: '700',
+    textDecoration: 'underline',
+    textDecorationColor: t.color.accent,
+    textDecorationThickness: '2px',
   },
 }
 

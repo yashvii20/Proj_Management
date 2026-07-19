@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { theme as t } from '../theme'
 
 function Sidebar() {
   const navigate = useNavigate()
@@ -35,140 +36,162 @@ function Sidebar() {
     navigate('/login')
   }
 
-  const initials = profile && profile.full_name ? profile.full_name.split(' ').map(function(n) { return n[0] }).join('').toUpperCase() : '?'
-  const colors = ['#a78bfa', '#4ade80', '#f59e0b', '#f87171', '#38bdf8']
+  const initials = profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
+  const colors = [t.color.accent, '#7A8B6F', '#8E7BA0', '#B0745A', '#5E8B8B']
 
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', tip: 'Overview and stats', icon: '⊞' },
-    { label: 'Projects', path: '/projects', tip: 'All your projects', icon: '▦' },
-    { label: 'Tasks', path: '/tasks', tip: 'Every task, filterable', icon: '✓' },
-    { label: 'Mood board', path: '/moodboard', tip: 'Visual references', icon: '🖼' },
-    { label: 'Activity', path: '/activity', tip: 'Team activity feed', icon: '◎' },
+    { label: 'Dashboard', path: '/dashboard', icon: '⊞' },
+    { label: 'Projects', path: '/projects', icon: '▦' },
+    { label: 'Tasks', path: '/tasks', icon: '✓' },
+    { label: 'Mood board', path: '/moodboard', icon: '🖼' },
+    { label: 'Activity', path: '/activity', icon: '◎' },
   ]
 
   const sidebarContent = (
-    React.createElement(React.Fragment, null,
-      React.createElement('div', { style: s.logo },
-        React.createElement('div', { style: s.logoIcon }, 'AT'),
-        React.createElement('span', { style: s.logoText }, 'Atelier'),
-        React.createElement('div', { style: s.mobileClose, onClick: function() { setMobileOpen(false) } }, 'x')
-      ),
-      React.createElement('div', { className: 'nav-row', onClick: function() { navigate('/notifications') } },
-        React.createElement('div', { className: 'nav-item' + (location.pathname === '/notifications' ? ' nav-active' : '') },
-          React.createElement('span', { style: { fontSize: '15px', width: '18px', textAlign: 'center' } }, '🔔'),
-          React.createElement('span', null, 'Notifications'),
-          unreadCount > 0 && React.createElement('span', { style: s.badge }, unreadCount),
-          React.createElement('span', { className: 'nav-tip' }, 'See your updates')
-        )
-      ),
-      React.createElement('nav', { style: s.nav },
-        navItems.map(function(item) {
-          return React.createElement('div', { key: item.label, className: 'nav-row', onClick: function() { navigate(item.path) } },
-            React.createElement('div', { className: 'nav-item' + (location.pathname === item.path ? ' nav-active' : '') },
-            React.createElement('span', { style: { fontSize: '15px', width: '18px', textAlign: 'center' } }, item.icon),
-            React.createElement('span', null, item.label),
-              React.createElement('span', { className: 'nav-tip' }, item.tip)
-            )
-          )
-        })
-      ),
-      React.createElement('div', { style: s.sectionLabel }, 'Projects'),
-      projects.slice(0, 5).map(function(p, i) {
-        return React.createElement('div', { key: p.id, className: 'nav-row', onClick: function() { navigate('/projects/' + p.id) } },
-          React.createElement('div', { className: 'proj-item' },
-            React.createElement('div', { style: Object.assign({}, s.dot, { background: colors[i % colors.length] }) }),
-            React.createElement('span', { style: s.projectName }, p.name)
-          )
-        )
-      }),
-      projects.length === 0 && React.createElement('div', { style: s.noProjects }, 'No projects yet'),
-      React.createElement('div', { style: s.userRow },
-        React.createElement('div', { style: s.userInfoClickable, className: 'user-info-clickable', onClick: function() { navigate('/profile') } },
-          profile && profile.avatar_url
-            ? React.createElement('img', { src: profile.avatar_url, alt: 'avatar', style: s.avatarImg, onError: function(e) { e.target.style.display = 'none' } })
-            : React.createElement('div', { style: s.avatar }, initials),
-          React.createElement('div', { style: s.userTextWrap },
-            React.createElement('div', { style: s.userName }, profile ? profile.full_name : '...'),
-            React.createElement('div', { style: s.userRole }, profile ? profile.role : 'member')
-          )
-        ),
-        React.createElement('div', { style: s.logoutBtn, onClick: function(e) { e.stopPropagation(); handleLogout() } }, 'exit')
-      )
-    )
+    <>
+      <div style={s.logo}>
+        <div style={s.logoIcon}>A</div>
+        <span style={s.logoText}>Atelier</span>
+        <div style={s.mobileClose} onClick={() => setMobileOpen(false)}>×</div>
+      </div>
+
+      <div style={s.navRow} onClick={() => navigate('/notifications')}>
+        <div className={'nav-item' + (location.pathname === '/notifications' ? ' nav-active' : '')}>
+          <span style={s.icon}>🔔</span>
+          <span>Notifications</span>
+          {unreadCount > 0 && <span style={s.badge}>{unreadCount}</span>}
+        </div>
+      </div>
+
+      <div style={s.sectionLabel}>Menu</div>
+      <nav style={s.nav}>
+        {navItems.map(item => (
+          <div key={item.label} style={s.navRow} onClick={() => navigate(item.path)}>
+            <div className={'nav-item' + (location.pathname === item.path ? ' nav-active' : '')}>
+              <span style={s.icon}>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      <div style={s.sectionLabel}>Projects</div>
+      {projects.slice(0, 5).map((p, i) => (
+        <div key={p.id} style={s.navRow} onClick={() => navigate('/projects/' + p.id)}>
+          <div className="proj-item">
+            <div style={{ ...s.dot, background: colors[i % colors.length] }} />
+            <span style={s.projectName}>{p.name}</span>
+          </div>
+        </div>
+      ))}
+      {projects.length === 0 && <div style={s.noProjects}>No projects yet</div>}
+
+      <div style={s.userRow}>
+        <div style={s.userInfoClickable} className="user-info-clickable" onClick={() => navigate('/profile')}>
+          {profile?.avatar_url
+            ? <img src={profile.avatar_url} alt="avatar" style={s.avatarImg} onError={e => { e.target.style.display = 'none' }} />
+            : <div style={s.avatar}>{initials}</div>
+          }
+          <div style={s.userTextWrap}>
+            <div style={s.userName}>{profile ? profile.full_name : '...'}</div>
+            <div style={s.userRole}>{profile ? profile.role : 'member'}</div>
+          </div>
+        </div>
+        <div style={s.logoutBtn} onClick={e => { e.stopPropagation(); handleLogout() }}>Exit</div>
+      </div>
+    </>
   )
 
   return (
-    React.createElement(React.Fragment, null,
-      React.createElement('div', { style: s.mobileTopbar, className: 'mobile-topbar' },
-        React.createElement('div', { style: s.mobileMenuBtn, onClick: function() { setMobileOpen(true) } },
-          React.createElement('div', { style: s.hamburgerLine }),
-          React.createElement('div', { style: s.hamburgerLine }),
-          React.createElement('div', { style: s.hamburgerLine })
-        ),
-        React.createElement('div', { style: s.mobileLogoText }, 'Atelier'),
-        React.createElement('div', { style: s.bellWrap, onClick: function() { navigate('/notifications') } },
-          React.createElement('div', { style: s.bellIcon }, String.fromCodePoint(0x1F514)),
-          unreadCount > 0 && React.createElement('div', { style: s.bellBadge }, unreadCount)
-        )
-      ),
-      React.createElement('div', { style: s.sidebar, className: 'sidebar-desktop' }, sidebarContent),
-      mobileOpen && React.createElement('div', { style: s.mobileOverlay, className: 'mobile-overlay-active', onClick: function() { setMobileOpen(false) } },
-      React.createElement('div', { style: s.mobileSidebar, className: 'mobile-drawer', onClick: function(e) { e.stopPropagation() } }, sidebarContent)
-      ),
-      React.createElement('style', null, globalCss)
-    )
+    <>
+      <div style={s.mobileTopbar} className="mobile-topbar">
+        <div style={s.mobileMenuBtn} onClick={() => setMobileOpen(true)}>
+          <div style={s.hamburgerLine} />
+          <div style={s.hamburgerLine} />
+          <div style={s.hamburgerLine} />
+        </div>
+        <div style={s.mobileLogoText}>Atelier</div>
+        <div style={s.bellWrap} onClick={() => navigate('/notifications')}>
+          <div style={s.bellIcon}>🔔</div>
+          {unreadCount > 0 && <div style={s.bellBadge}>{unreadCount}</div>}
+        </div>
+      </div>
+
+      <div style={s.sidebar} className="sidebar-desktop">{sidebarContent}</div>
+
+      {mobileOpen && (
+        <div style={s.mobileOverlay} className="mobile-overlay-active" onClick={() => setMobileOpen(false)}>
+          <div style={s.mobileSidebar} className="mobile-drawer" onClick={e => e.stopPropagation()}>{sidebarContent}</div>
+        </div>
+      )}
+
+      <style>{globalCss}</style>
+    </>
   )
 }
 
-const globalCss = [
-'@media (max-width: 768px) { .sidebar-desktop { display: none !important; } .mobile-topbar { display: flex !important; } .mobile-overlay-active { display: flex !important; } }',
-'.nav-row { position: relative; }',
-'.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; font-size: 13px; color: #888; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease; border-radius: 0 20px 20px 0; margin-right: 10px; position: relative; }',
-'.nav-item:hover { background: #1c1c1c; color: #ddd; transform: translateX(2px); }',
-'.nav-item:active { transform: translateX(2px) scale(0.97); background: #222; }',
-'.nav-active { background: #241c3a !important; color: #a78bfa !important; font-weight: 500; }',
-'.nav-active:hover { background: #2a2046 !important; }',
-'.nav-tip { position: absolute; left: 100%; top: 50%; transform: translateY(-50%) scale(0.9); margin-left: 10px; background: #1f1f1f; border: 1px solid #2c2c2c; color: #ccc; font-size: 11px; padding: 5px 10px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 10; }',
-'.nav-item:hover .nav-tip { opacity: 1; transform: translateY(-50%) scale(1); }',
-'@media (max-width: 768px) { .nav-tip { display: none; } }',
-'.proj-item { display: flex; align-items: center; gap: 8px; padding: 6px 16px; cursor: pointer; border-radius: 0 20px 20px 0; margin-right: 10px; transition: background 0.12s ease; }',
-'.proj-item:hover { background: #1c1c1c; }',
-'.proj-item:active { background: #222; transform: scale(0.98); }',
-'.user-info-clickable { transition: background 0.12s ease; border-radius: 8px; }',
-'.user-info-clickable:hover { background: #1c1c1c; }',
-'.mobile-drawer { animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1); }',
-'@keyframes slideIn { from { transform: translateX(-100%); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }',
-].join(' ')
+const globalCss = `
+  @media (max-width: 768px) {
+    .sidebar-desktop { display: none !important; }
+    .mobile-topbar { display: flex !important; }
+    .mobile-overlay-active { display: flex !important; }
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+    font-size: 13px; color: ${t.color.sidebarMuted}; cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    border-radius: 6px; margin: 0 10px; border-left: 2px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: ${t.color.sidebarText}; }
+  .nav-active {
+    background: ${t.color.sidebarActiveBg} !important;
+    color: ${t.color.sidebarText} !important;
+    font-weight: 600;
+    border-left: 2px solid ${t.color.accent};
+  }
+  .proj-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 16px;
+    cursor: pointer; border-radius: 6px; margin: 0 10px;
+    transition: background 0.12s ease;
+  }
+  .proj-item:hover { background: rgba(255,255,255,0.05); }
+  .user-info-clickable { transition: background 0.12s ease; border-radius: 8px; }
+  .user-info-clickable:hover { background: rgba(255,255,255,0.05); }
+  .mobile-drawer { animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  @keyframes slideIn { from { transform: translateX(-100%); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
+`
 
 const s = {
-  mobileTopbar: { display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: '#111', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, zIndex: 50 },
+  mobileTopbar: { display: 'none', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: t.color.sidebarBg, borderBottom: `1px solid ${t.color.sidebarBorder}`, position: 'sticky', top: 0, zIndex: 50 },
   mobileMenuBtn: { display: 'flex', flexDirection: 'column', gap: '4px', cursor: 'pointer', padding: '4px' },
-  hamburgerLine: { width: '20px', height: '2px', background: '#ccc', borderRadius: '2px' },
-  mobileLogoText: { fontSize: '14px', fontWeight: '600', color: '#fff' },
+  hamburgerLine: { width: '20px', height: '2px', background: t.color.sidebarText, borderRadius: '2px' },
+  mobileLogoText: { fontFamily: t.font.display, fontSize: '15px', fontWeight: '700', color: t.color.sidebarText },
   bellWrap: { position: 'relative', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   bellIcon: { fontSize: '16px' },
-  bellBadge: { position: 'absolute', top: '0px', right: '0px', width: '14px', height: '14px', borderRadius: '50%', background: '#a78bfa', color: '#fff', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  mobileOverlay: { display: 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200 },
-  mobileSidebar: { width: '260px', height: '100vh', background: '#111', display: 'flex', flexDirection: 'column', overflowY: 'auto' },
-  mobileClose: { marginLeft: 'auto', color: '#666', fontSize: '14px', cursor: 'pointer', padding: '4px 8px' },
-  sidebar: { width: '220px', background: '#111', borderRight: '1px solid #1e1e1e', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', position: 'sticky', top: 0 },
-  logo: { display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 16px', borderBottom: '1px solid #1e1e1e' },
-  logoIcon: { width: '28px', height: '28px', borderRadius: '7px', background: '#a78bfa', color: '#fff', fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: '13px', fontWeight: '600', color: '#fff' },
-  badge: { background: '#a78bfa', color: '#fff', fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px', minWidth: '16px', textAlign: 'center', marginLeft: 'auto' },
-  nav: { padding: '4px 8px 12px' },
-  sectionLabel: { padding: '12px 16px 6px', fontSize: '10px', color: '#444', letterSpacing: '1px', textTransform: 'uppercase' },
-  projectName: { fontSize: '12px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  bellBadge: { position: 'absolute', top: '0px', right: '0px', width: '14px', height: '14px', borderRadius: '50%', background: t.color.accent, color: '#fff', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  mobileOverlay: { display: 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 },
+  mobileSidebar: { width: '260px', height: '100vh', background: t.color.sidebarBg, display: 'flex', flexDirection: 'column', overflowY: 'auto' },
+  mobileClose: { marginLeft: 'auto', color: t.color.sidebarMuted, fontSize: '18px', cursor: 'pointer', padding: '4px 8px' },
+  sidebar: { width: '260px', background: t.color.sidebarBg, display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', position: 'sticky', top: 0, fontFamily: t.font.body },
+  logo: { display: 'flex', alignItems: 'center', gap: '10px', padding: '24px 20px', borderBottom: `1px solid ${t.color.sidebarBorder}`, marginBottom: '8px' },
+  logoIcon: { width: '32px', height: '32px', border: `1px solid ${t.color.accent}`, color: t.color.sidebarText, fontFamily: t.font.display, fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  logoText: { fontFamily: t.font.display, fontSize: '17px', fontWeight: '700', color: t.color.sidebarText },
+  navRow: { position: 'relative' },
+  icon: { fontSize: '14px', width: '18px', textAlign: 'center' },
+  badge: { background: t.color.accent, color: '#fff', fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px', minWidth: '16px', textAlign: 'center', marginLeft: 'auto' },
+  nav: { padding: '0 0 8px' },
+  sectionLabel: { padding: '14px 20px 6px', fontSize: '10px', color: t.color.sidebarMuted, letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '600' },
+  projectName: { fontSize: '13px', color: t.color.sidebarText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   dot: { width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0 },
-  noProjects: { fontSize: '12px', color: '#333', padding: '6px 16px' },
-  userRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 10px 10px 16px', marginTop: 'auto', borderTop: '1px solid #1e1e1e' },
+  noProjects: { fontSize: '12px', color: t.color.sidebarMuted, padding: '6px 20px' },
+  userRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 14px 14px 20px', marginTop: 'auto', borderTop: `1px solid ${t.color.sidebarBorder}` },
   userInfoClickable: { display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flex: 1, minWidth: 0, padding: '4px 6px' },
   userTextWrap: { minWidth: 0 },
-  avatar: { width: '30px', height: '30px', borderRadius: '50%', background: '#2d1f4e', color: '#a78bfa', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  avatarImg: { width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 },
-  userName: { fontSize: '12px', color: '#ccc', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  userRole: { fontSize: '11px', color: '#444', textTransform: 'capitalize' },
-  logoutBtn: { fontSize: '11px', color: '#444', cursor: 'pointer', flexShrink: 0, padding: '4px 6px' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(176,141,87,0.2)', color: t.color.accent, fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  avatarImg: { width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 },
+  userName: { fontSize: '13px', color: t.color.sidebarText, fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  userRole: { fontSize: '11px', color: t.color.sidebarMuted, textTransform: 'capitalize' },
+  logoutBtn: { fontSize: '12px', color: t.color.sidebarMuted, cursor: 'pointer', flexShrink: 0, padding: '4px 6px' },
 }
 
 export default Sidebar
