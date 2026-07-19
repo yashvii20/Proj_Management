@@ -87,8 +87,56 @@ function MoodBoard() {
     setShowNewCategory(false)
   }
 
-  const uploadFile = async (file, onDone) => {
+const compressImage = (file, maxWidth = 1920, quality = 0.82) => {
+  return new Promise((resolve) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) return resolve(file)
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > maxWidth || height > maxWidth) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        } else {
+          width = Math.round((width * maxWidth) / height)
+          height = maxWidth
+        }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => {
+          if (blob && blob.size < file.size) {
+            const cleanName = file.name.replace(/\.[^/.]+$/, '') + '.webp'
+            const compressedFile = new File([blob], cleanName, {
+              type: 'image/webp',
+              lastModified: Date.now(),
+            })
+            resolve(compressedFile)
+          } else {
+            resolve(file)
+          }
+        },
+        'image/webp',
+        quality
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(file)
+    }
+    img.src = url
+  })
+}
+
+  const uploadFile = async (rawFile, onDone) => {
     setUploading(true)
+    const file = await compressImage(rawFile)
     const ext = file.name.split('.').pop()
     const fileName = Date.now() + '.' + ext
     const { error } = await supabase.storage.from('moodboard').upload(fileName, file, { upsert: true })
@@ -152,7 +200,19 @@ function MoodBoard() {
     setShowDetail(true)
   }
 
+  const deleteStorageFile = async (url) => {
+    if (!url || typeof url !== 'string' || !url.includes('/storage/v1/object/public/moodboard/')) return
+    const fileName = url.split('/storage/v1/object/public/moodboard/').pop()
+    if (fileName) {
+      await supabase.storage.from('moodboard').remove([fileName])
+    }
+  }
+
   const handleDeleteAttachment = async (attachId) => {
+    const target = attachments.find(a => a.id === attachId)
+    if (target && target.image_url) {
+      await deleteStorageFile(target.image_url)
+    }
     await supabase.from('moodboard_attachments').delete().eq('id', attachId)
     const updated = attachments.filter(a => a.id !== attachId)
     setAttachments(updated)
@@ -161,6 +221,12 @@ function MoodBoard() {
   }
 
   const handleDeleteItem = async (itemId) => {
+    const { data: itemAttachs } = await supabase.from('moodboard_attachments').select('image_url').eq('moodboard_item_id', itemId)
+    if (itemAttachs && itemAttachs.length > 0) {
+      for (const att of itemAttachs) {
+        if (att.image_url) await deleteStorageFile(att.image_url)
+      }
+    }
     await supabase.from('moodboard_items').delete().eq('id', itemId)
     setShowDetail(false)
     fetchItems()
@@ -265,8 +331,28 @@ function MoodBoard() {
                     </>
                   ) : (
                     <>
-                      <div style={{ ...s.cardImg, background: firstAttach ? theme.color.bg : theme.color.bg }}>
-                        {firstAttach && firstAttach.image_url && <img src={firstAttach.image_url} alt={item.title} style={s.img} onError={e => { e.target.style.display = 'none' }} />}
+                      <div style={{ ...s.cardImg, background: theme.color.bg, position: 'relative' }}>
+                        {firstAttach && (firstAttach.image_url || firstAttach.source_url) ? (
+                          <>
+                            <img
+                              src={firstAttach.image_url || firstAttach.source_url}
+                              alt={item.title}
+                              style={s.img}
+                              onError={e => {
+                                e.target.style.display = 'none'
+                                const fb = e.target.parentElement.querySelector('.img-fallback')
+                                if (fb) fb.style.display = 'flex'
+                              }}
+                            />
+                            <div className='img-fallback' style={{ ...s.imgFallback, display: 'none' }}>
+                              <span>🔗 Reference Link</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={s.imgFallback}>
+                            <span>📁 Document / Reference</span>
+                          </div>
+                        )}
                         {(item.moodboard_attachments || []).length > 1 && <div style={s.imgCount}>+{(item.moodboard_attachments || []).length - 1}</div>}
                       </div>
                       <div style={s.cardBody}>
@@ -351,7 +437,24 @@ function MoodBoard() {
             <div style={s.detailLeft} className='detail-modal-left'>
               {currentAttachment ? (
                 currentAttachment.file_type === 'image' ? (
-                  <img src={currentAttachment.image_url} alt='' style={s.detailImg} onError={e => { e.target.style.display = 'none' }} />
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <img
+                      src={currentAttachment.image_url || currentAttachment.source_url}
+                      alt=''
+                      style={s.detailImg}
+                      onError={e => {
+                        e.target.style.display = 'none'
+                        const fb = e.target.parentElement.querySelector('.detail-fallback')
+                        if (fb) fb.style.display = 'flex'
+                      }}
+                    />
+                    <div className='detail-fallback' style={{ ...s.linkPlaceholder, display: 'none' }}>
+                      <div style={s.linkPlaceholderText}>Image link unavailable or CORS restricted</div>
+                      {(currentAttachment.image_url || currentAttachment.source_url) && (
+                        <a href={currentAttachment.image_url || currentAttachment.source_url} target='_blank' rel='noopener noreferrer' style={s.linkOpenBtn}>Open external link</a>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div style={s.linkPlaceholder}>
                     <div style={s.linkPlaceholderText}>{currentAttachment.file_type === 'pdf' ? 'PDF document' : currentAttachment.file_type === 'word' ? 'Word document' : currentAttachment.file_type === 'excel' ? 'Excel spreadsheet' : currentAttachment.file_type === 'ppt' ? 'PowerPoint file' : 'Link reference'}</div>
@@ -474,6 +577,7 @@ const s = {
   card: { background: theme.color.surface, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.md, overflow: 'hidden', cursor: 'pointer' },
   cardImg: { height: '140px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   img: { width: '100%', height: '100%', objectFit: 'cover' },
+  imgFallback: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.color.bg, color: theme.color.muted, fontSize: '11.5px', fontWeight: '500' },
   imgCount: { position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(30,34,51,0.72)', color: theme.color.primaryText, fontSize: '11px', padding: '2px 8px', borderRadius: theme.radius.lg },
   cardBody: { padding: '11px 13px' },
   cardTitle: { fontSize: '13px', fontWeight: 500, color: theme.color.ink, marginBottom: '7px' },
