@@ -200,6 +200,23 @@ const compressImage = (file, maxWidth = 1920, quality = 0.82) => {
     setShowDetail(true)
   }
 
+const PencilIcon = ({ size = 12, color = theme.color.muted }) => (
+  <svg width={size} height={size} viewBox='0 0 24 24' fill='none' style={{ flexShrink: 0, pointerEvents: 'none' }}>
+    <path d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' stroke={color} strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
+  </svg>
+)
+
+  const [editingItemTitle, setEditingItemTitle] = useState(false)
+  const [editItemTitle, setEditItemTitle] = useState('')
+
+  const handleUpdateItemTitle = async () => {
+    if (!editItemTitle.trim()) return
+    await supabase.from('moodboard_items').update({ title: editItemTitle.trim() }).eq('id', selectedItem.id)
+    setSelectedItem({ ...selectedItem, title: editItemTitle.trim() })
+    setEditingItemTitle(false)
+    fetchItems()
+  }
+
   const deleteStorageFile = async (url) => {
     if (!url || typeof url !== 'string' || !url.includes('/storage/v1/object/public/moodboard/')) return
     const fileName = url.split('/storage/v1/object/public/moodboard/').pop()
@@ -209,6 +226,7 @@ const compressImage = (file, maxWidth = 1920, quality = 0.82) => {
   }
 
   const handleDeleteAttachment = async (attachId) => {
+    if (!window.confirm('Are you sure you want to delete this attachment reference?')) return
     const target = attachments.find(a => a.id === attachId)
     if (target && target.image_url) {
       await deleteStorageFile(target.image_url)
@@ -221,6 +239,7 @@ const compressImage = (file, maxWidth = 1920, quality = 0.82) => {
   }
 
   const handleDeleteItem = async (itemId) => {
+    if (!window.confirm('Are you sure you want to delete this moodboard item? All attached files and comments will be permanently removed.')) return
     const { data: itemAttachs } = await supabase.from('moodboard_attachments').select('image_url').eq('moodboard_item_id', itemId)
     if (itemAttachs && itemAttachs.length > 0) {
       for (const att of itemAttachs) {
@@ -477,47 +496,73 @@ const compressImage = (file, maxWidth = 1920, quality = 0.82) => {
             <div style={s.detailRight} className='detail-modal-right'>
               <div style={s.detailRightTop}>
                 <button style={s.closeBtnFixed} onClick={() => setShowDetail(false)}>x</button>
-                <div style={s.detailTitle}>{selectedItem.title}</div>
+                {editingItemTitle ? (
+                  <div style={s.editTitleRow}>
+                    <input
+                      style={s.inputTitleEdit}
+                      value={editItemTitle}
+                      onChange={e => setEditItemTitle(e.target.value)}
+                      autoFocus
+                    />
+                    <button style={s.btnSaveSm} onClick={handleUpdateItemTitle}>Save</button>
+                    <button style={s.btnCancelSm} onClick={() => setEditingItemTitle(false)}>✕</button>
+                  </div>
+                ) : (
+                  <div style={s.detailTitleWrapper} onClick={() => { setEditItemTitle(selectedItem.title); setEditingItemTitle(true) }} title="Click to edit title">
+                    <div style={s.detailTitle}>{selectedItem.title}</div>
+                    <PencilIcon size={13} color={theme.color.accent} />
+                  </div>
+                )}
                 <div style={s.detailMeta}>
-                  <select style={s.projSelect} value={selectedItem.project_id || ''} onChange={async (e) => { const newProjId = e.target.value || null; await supabase.from('moodboard_items').update({ project_id: newProjId }).eq('id', selectedItem.id); setSelectedItem({ ...selectedItem, project_id: newProjId, projects: projects.find(p => p.id === newProjId) || null }); fetchItems() }}>
-                    <option value=''>No project</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  <select style={s.catSelect} value={selectedItem.category_id || ''} onChange={async (e) => { const newCatId = e.target.value || null; await supabase.from('moodboard_items').update({ category_id: newCatId }).eq('id', selectedItem.id); setSelectedItem({ ...selectedItem, category_id: newCatId, moodboard_categories: categories.find(c => c.id === newCatId) || null }); fetchItems() }}>
-                    <option value=''>Uncategorized</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <div style={s.editableSelectPill} title="Click to change project">
+                    <select style={s.projSelect} value={selectedItem.project_id || ''} onChange={async (e) => { const newProjId = e.target.value || null; await supabase.from('moodboard_items').update({ project_id: newProjId }).eq('id', selectedItem.id); setSelectedItem({ ...selectedItem, project_id: newProjId, projects: projects.find(p => p.id === newProjId) || null }); fetchItems() }}>
+                      <option value=''>No project</option>
+                      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <PencilIcon size={10} color={theme.color.muted} />
+                  </div>
+                  <div style={s.editableSelectPill} title="Click to change category">
+                    <select style={s.catSelect} value={selectedItem.category_id || ''} onChange={async (e) => { const newCatId = e.target.value || null; await supabase.from('moodboard_items').update({ category_id: newCatId }).eq('id', selectedItem.id); setSelectedItem({ ...selectedItem, category_id: newCatId, moodboard_categories: categories.find(c => c.id === newCatId) || null }); fetchItems() }}>
+                      <option value=''>Uncategorized</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <PencilIcon size={10} color={theme.color.muted} />
+                  </div>
                   <span style={s.attachCount}>{attachments.length} references</span>
                 </div>
                 {currentAttachment && (
                   <div style={s.detailExtra}>
                     {currentAttachment.description && <div style={s.descText}>{currentAttachment.description}</div>}
                     <div style={s.metaRow}>
-                      <select
-                        style={{
-                          background: theme.color.surface,
-                          color: statusColor[currentAttachment.status || 'draft'],
-                          border: `1.5px solid ${statusColor[currentAttachment.status || 'draft']}`,
-                          borderRadius: '999px',
-                          padding: '3px 10px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          outline: 'none',
-                          fontFamily: theme.font.body,
-                        }}
-                        value={currentAttachment.status || 'draft'}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value
-                          await supabase.from('moodboard_attachments').update({ status: newStatus }).eq('id', currentAttachment.id)
-                          setAttachments(prev => prev.map(a => a.id === currentAttachment.id ? { ...a, status: newStatus } : a))
-                          fetchItems()
-                        }}
-                      >
-                        <option value='draft'>Draft</option>
-                        <option value='review'>Needs review</option>
-                        <option value='final'>Final</option>
-                      </select>
+                      <div style={{ ...s.editableBadgeWrap, borderColor: statusColor[currentAttachment.status || 'draft'] }} title="Click to change status">
+                        <select
+                          style={{
+                            background: 'transparent',
+                            color: statusColor[currentAttachment.status || 'draft'],
+                            border: 'none',
+                            padding: '3px 4px 3px 10px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            fontFamily: theme.font.body,
+                          }}
+                          value={currentAttachment.status || 'draft'}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value
+                            await supabase.from('moodboard_attachments').update({ status: newStatus }).eq('id', currentAttachment.id)
+                            setAttachments(prev => prev.map(a => a.id === currentAttachment.id ? { ...a, status: newStatus } : a))
+                            fetchItems()
+                          }}
+                        >
+                          <option value='draft'>Draft</option>
+                          <option value='review'>Needs review</option>
+                          <option value='final'>Final</option>
+                        </select>
+                        <span style={{ paddingRight: '8px', display: 'flex', alignItems: 'center' }}>
+                          <PencilIcon size={10} color={statusColor[currentAttachment.status || 'draft']} />
+                        </span>
+                      </div>
                       {currentAttachment.tags && currentAttachment.tags.map((tag, i) => <span key={i} style={s.tagPill}>{tag}</span>)}
                     </div>
                   </div>
@@ -611,7 +656,14 @@ const s = {
   navCount: { fontSize: '12px', color: theme.color.sidebarMuted },
   detailRight: { width: '300px', display: 'flex', flexDirection: 'column', borderLeft: `1px solid ${theme.color.border}`, overflowY: 'auto' },
   detailRightTop: { padding: '16px', borderBottom: `1px solid ${theme.color.border}`, position: 'relative' },
-  detailTitle: { fontFamily: theme.font.display, fontSize: '15px', fontWeight: 600, color: theme.color.ink, marginBottom: '9px', paddingRight: '30px' },
+  detailTitle: { fontFamily: theme.font.display, fontSize: '15px', fontWeight: 600, color: theme.color.ink },
+  detailTitleWrapper: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '9px', paddingRight: '30px' },
+  editTitleRow: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '9px', paddingRight: '30px' },
+  inputTitleEdit: { flex: 1, padding: '4px 8px', background: theme.color.bg, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, color: theme.color.ink, fontSize: '14px', fontFamily: theme.font.display, fontWeight: '600', outline: 'none' },
+  btnSaveSm: { background: theme.color.primary, color: theme.color.primaryText, border: 'none', padding: '4px 10px', borderRadius: theme.radius.sm, fontSize: '11px', fontWeight: '600', cursor: 'pointer' },
+  btnCancelSm: { background: 'transparent', color: theme.color.muted, border: `1px solid ${theme.color.border}`, padding: '4px 8px', borderRadius: theme.radius.sm, fontSize: '11px', cursor: 'pointer' },
+  editableSelectPill: { display: 'inline-flex', alignItems: 'center', gap: '3px', background: theme.color.bg, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.sm, paddingRight: '6px' },
+  editableBadgeWrap: { display: 'inline-flex', alignItems: 'center', background: theme.color.surface, border: '1.5px solid', borderRadius: '999px' },
   detailMeta: { display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' },
   attachCount: { fontSize: '11px', color: theme.color.muted },
   detailExtra: { marginTop: '6px' },
